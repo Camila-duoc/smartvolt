@@ -28,7 +28,12 @@ class AttendanceRepository @Inject constructor(
 
     suspend fun perimetro(faenaId: String): Perimetro? {
         val f = config.faena(faenaId) ?: return null
-        val poly = f.poligonoJson?.let { json.decodeFromString<List<List<Double>>>(it) }?.map { LatLon(it[0], it[1]) }
+        // El polígono viene como [[lat, lon], ...]; se ignora si está corrupto o tiene menos de 3 puntos.
+        val poly = f.poligonoJson?.let { raw ->
+            runCatching { json.decodeFromString<List<List<Double>>>(raw) }.getOrNull()
+                ?.mapNotNull { p -> if (p.size >= 2) LatLon(p[0], p[1]) else null }
+                ?.takeIf { it.size >= 3 }
+        }
         return Perimetro(f.tipoPerimetro, LatLon(f.centroLat, f.centroLon), f.radioM, poly)
     }
 
@@ -58,23 +63,25 @@ class AttendanceRepository @Inject constructor(
         marcas.insertVisacion(VisacionEntity(marcaId, supervisorId, aprobada, ahoraMs))
 
     // ---------- Sincronización ----------
-    /** Envía marcas pendientes. Lanza excepción si no hay red (el Worker reintenta). */
+    /** Envía marcas pendientes agrupadas por usuario, para que el deviceId viaje con su dueño. */
     suspend fun sincronizarMarcas() {
         val pend = marcas.pendientes()
         if (pend.isEmpty()) return
         val lecturas = marcas.lecturasDe(pend.map { it.id }).groupBy { it.marcaId }
-        val dtos = pend.map { m ->
-            MarcaDto(
-                m.id, m.usuarioId, m.faenaId, m.tipo.name, m.lat, m.lon, m.accuracy, m.timestampUtc,
-                m.elapsedRealtimeMs, m.estado.name, m.motivo, m.hashPrevio, m.hash,
-                lecturas[m.id].orEmpty().map { LecturaDto(it.uuid, it.rssiPromedio, it.muestras) },
-            )
+        for ((usuarioId, lista) in pend.groupBy { it.usuarioId }) {
+            val dtos = lista.map { m ->
+                MarcaDto(
+                    m.id, m.usuarioId, m.faenaId, m.tipo.name, m.lat, m.lon, m.accuracy, m.timestampUtc,
+                    m.elapsedRealtimeMs, m.estado.name, m.motivo, m.hashPrevio, m.hash,
+                    lecturas[m.id].orEmpty().map { LecturaDto(it.uuid, it.rssiPromedio, it.muestras) },
+                )
+            }
+            val resp = api.enviarLote(LoteRequest(config.usuario(usuarioId)?.deviceId, dtos))
+            val ok = resp.resultados.filter { it.aceptada }.map { it.id }
+            val error = resp.resultados.filter { !it.aceptada }.map { it.id }
+            if (ok.isNotEmpty()) marcas.actualizarSync(ok, SyncEstado.ENVIADA)
+            if (error.isNotEmpty()) marcas.actualizarSync(error, SyncEstado.ERROR)
         }
-        val resp = api.enviarLote(LoteRequest(pend.firstOrNull()?.usuarioId?.let { config.usuario(it)?.deviceId }, dtos))
-        val ok = resp.resultados.filter { it.aceptada }.map { it.id }
-        val error = resp.resultados.filter { !it.aceptada }.map { it.id }
-        if (ok.isNotEmpty()) marcas.actualizarSync(ok, SyncEstado.ENVIADA)
-        if (error.isNotEmpty()) marcas.actualizarSync(error, SyncEstado.ERROR)
     }
 
     suspend fun sincronizarConfiguracion() = aplicarConfiguracion(api.configuracion(null))

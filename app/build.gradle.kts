@@ -27,9 +27,12 @@ android {
         debug { buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080/\"") } // 10.0.2.2 = PC host desde el emulador
         release { isMinifyEnabled = false; buildConfigField("String", "API_BASE_URL", "\"https://api.smartvolt.invalid/\"") }
     }
-    buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
-    kotlinOptions { jvmTarget = "17" }
+    buildFeatures { compose = true; buildConfig = true }
+}
+
+kotlin {
+    compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) }
 }
 
 dependencies {

@@ -10,19 +10,45 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import cl.smartvolt.asistencia.data.local.UsuarioEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.domain.model.Rol
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** Sesión en memoria + copia en SharedPreferences para sobrevivir a la muerte del proceso. */
 @Singleton
-class SessionState @Inject constructor() {
-    val usuario = MutableStateFlow<UsuarioEntity?>(null)
+class SessionState @Inject constructor(@ApplicationContext private val context: Context) {
+    private val prefs = context.getSharedPreferences("sesion_smartvolt", Context.MODE_PRIVATE)
+
+    private val _usuario = MutableStateFlow<UsuarioEntity?>(null)
+    val usuario: StateFlow<UsuarioEntity?> = _usuario
+
+    fun iniciar(u: UsuarioEntity) {
+        prefs.edit().putString(CLAVE_USUARIO, u.id).apply()
+        _usuario.value = u
+    }
+
+    fun cerrar() {
+        prefs.edit().remove(CLAVE_USUARIO).apply()
+        _usuario.value = null
+    }
+
+    /** Recupera el usuario guardado; lo llaman las pantallas autenticadas al abrirse. */
+    suspend fun restaurar(repo: AttendanceRepository) {
+        if (_usuario.value != null) return
+        val id = prefs.getString(CLAVE_USUARIO, null) ?: return
+        val u = repo.usuario(id)
+        if (u == null) prefs.edit().remove(CLAVE_USUARIO).apply() else _usuario.value = u
+    }
+
+    private companion object { const val CLAVE_USUARIO = "usuario_id" }
 }
 
 @HiltViewModel
@@ -33,13 +59,18 @@ class LoginViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    init { viewModelScope.launch { repo.cargarSemillaSiVacio() } }
+    init {
+        viewModelScope.launch {
+            runCatching { repo.cargarSemillaSiVacio() }
+                .onFailure { _error.value = "No se pudieron cargar los datos iniciales: ${it.message ?: "error de lectura"}" }
+        }
+    }
 
     /** DEMO: PIN fijo "1234". En una versión real, autenticar contra el backend (RF-04, RF-60). */
     fun ingresar(id: String, pin: String, onOk: (Rol) -> Unit) = viewModelScope.launch {
         val u = repo.usuario(id.trim().uppercase())
         if (u == null || pin != "1234") { _error.value = "Código o PIN incorrecto"; return@launch }
-        session.usuario.value = u
+        session.iniciar(u)
         _error.value = null
         onOk(u.rol)
     }

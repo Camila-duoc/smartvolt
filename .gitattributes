@@ -1,0 +1,5 @@
+# El script de Unix debe conservar LF; el de Windows, CRLF.
+.gitattributes text eol=lf
+gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf

@@ -19,10 +19,14 @@ fun AppNav() {
     val nav = rememberNavController()
     NavHost(nav, startDestination = "login") {
         composable("login") {
-            LoginScreen { rol ->
-                val destino = when (rol) { Rol.OPERARIO -> "operario"; Rol.CAPATAZ -> "capataz"; Rol.ADMIN -> "admin" }
+            LoginScreen(onLogin = { rol ->
+                val destino = when (rol) {
+                    Rol.OPERARIO -> "operario"
+                    Rol.CAPATAZ -> "capataz"
+                    Rol.ADMIN -> "admin"
+                }
                 nav.navigate(destino) { popUpTo("login") { inclusive = true } }
-            }
+            })
         }
         composable("operario") { CheckInScreen() }
         composable("capataz") { ForemanScreen() }

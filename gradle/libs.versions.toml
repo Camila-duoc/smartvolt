@@ -1,6 +1,6 @@
 # Versiones de referencia. Android Studio puede sugerir actualizaciones: acéptalas si sincroniza sin errores.
 [versions]
-agp = "8.5.2"
+agp = "8.7.3"
 kotlin = "2.0.20"
 ksp = "2.0.20-1.0.25"
 composeBom = "2024.09.00"

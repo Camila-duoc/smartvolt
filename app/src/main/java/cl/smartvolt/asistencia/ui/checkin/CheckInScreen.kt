@@ -38,17 +38,23 @@ data class CheckInUi(val cargando: Boolean = false, val veredicto: Veredicto? = 
 @HiltViewModel
 class CheckInViewModel @Inject constructor(
     private val registrar: RegistrarMarcaUseCase,
-    repo: AttendanceRepository,
+    private val repo: AttendanceRepository,
     private val session: SessionState,
     @ApplicationContext private val ctx: Context,
 ) : ViewModel() {
     private val _ui = MutableStateFlow(CheckInUi())
     val ui: StateFlow<CheckInUi> = _ui
+    val usuario = session.usuario
     val pendientes = repo.contarPendientes().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
-    val usuarioId get() = session.usuario.value?.id.orEmpty()
+
+    init { viewModelScope.launch { session.restaurar(repo) } }
 
     fun marcar(tipo: TipoMarca) {
-        val u = session.usuario.value ?: return
+        val u = session.usuario.value
+        if (u == null) {
+            _ui.value = CheckInUi(error = "Sesión no disponible. Vuelve a iniciar sesión.")
+            return
+        }
         viewModelScope.launch {
             _ui.value = CheckInUi(cargando = true)
             runCatching { registrar(u.id, u.faenaId, tipo) }
@@ -60,7 +66,10 @@ class CheckInViewModel @Inject constructor(
 
 private fun permisosCriticos(): Array<String> = buildList {
     add(Manifest.permission.ACCESS_FINE_LOCATION)
-    if (Build.VERSION.SDK_INT >= 31) add(Manifest.permission.BLUETOOTH_SCAN)
+    if (Build.VERSION.SDK_INT >= 31) {
+        add(Manifest.permission.BLUETOOTH_SCAN)
+        add(Manifest.permission.BLUETOOTH_CONNECT) // necesario para BluetoothAdapter.isEnabled en Android 12+
+    }
     if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
 }.toTypedArray()
 
@@ -73,12 +82,13 @@ private fun faltanPermisos(c: Context) = permisosCriticos()
 fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
     val ctx = LocalContext.current
     val ui by vm.ui.collectAsState()
+    val usuario by vm.usuario.collectAsState()
     val pendientes by vm.pendientes.collectAsState()
     var sinPermisos by remember { mutableStateOf(faltanPermisos(ctx)) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { sinPermisos = faltanPermisos(ctx) }
     LaunchedEffect(Unit) { if (sinPermisos) launcher.launch(permisosCriticos()) }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Marcar asistencia · ${vm.usuarioId}") }) }) { pad ->
+    Scaffold(topBar = { TopAppBar(title = { Text("Marcar asistencia · ${usuario?.id ?: "sin sesión"}") }) }) { pad ->
         Column(Modifier.padding(pad).padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (sinPermisos) {
                 Card { Column(Modifier.padding(16.dp)) {

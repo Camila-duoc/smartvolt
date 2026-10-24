@@ -33,7 +33,10 @@ object AppModule {
     @Provides @Singleton
     fun api(): ApiService {
         val client = OkHttpClient.Builder()
-            .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                // Nunca loguear IDs ni coordenadas en release.
+                level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+            })
             .build()
         val json = Json { ignoreUnknownKeys = true }
         return Retrofit.Builder().baseUrl(BuildConfig.API_BASE_URL).client(client)

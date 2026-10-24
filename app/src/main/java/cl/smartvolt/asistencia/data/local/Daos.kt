@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.room.Upsert
 import cl.smartvolt.asistencia.domain.model.SyncEstado
 import kotlinx.coroutines.flow.Flow
@@ -63,6 +64,7 @@ interface MarcaDao {
         MarcaEntity::class, LecturaBleEntity::class, EventoAntifraudeEntity::class, VisacionEntity::class],
     version = 1, exportSchema = false,
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun configDao(): ConfigDao
     abstract fun marcaDao(): MarcaDao
