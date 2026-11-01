@@ -24,8 +24,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
     @Provides @Singleton
-    fun db(@ApplicationContext c: Context): AppDatabase =
-        Room.databaseBuilder(c, AppDatabase::class.java, "smartvolt.db").build() // TODO: SQLCipher (RNF-08)
+    fun db(@ApplicationContext c: Context): AppDatabase = AppDatabase.getInstance(c) // TODO: SQLCipher (RNF-08)
 
     @Provides fun configDao(db: AppDatabase) = db.configDao()
     @Provides fun marcaDao(db: AppDatabase) = db.marcaDao()

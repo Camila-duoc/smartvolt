@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.navigation.compose.LocalNavController
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -49,7 +50,25 @@ class ForemanViewModel @Inject constructor(
 @Composable
 fun ForemanScreen(vm: ForemanViewModel = hiltViewModel()) {
     val filas by vm.filas.collectAsState()
-    Scaffold(topBar = { TopAppBar(title = { Text("Panel de presencia") }) }) { pad ->
+    val nav = LocalNavController.current
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Panel de presencia") },
+                actions = {
+                    IconButton(onClick = { nav.navigate("aprobar-horas-extra") }) {
+                        Icon(Icons.Default.HourglassEmpty, contentDescription = "Horas extra")
+                    }
+                    IconButton(onClick = { nav.navigate("calendario") }) {
+                        Icon(Icons.Default.CalendarMonth, contentDescription = "Calendario")
+                    }
+                    IconButton(onClick = { nav.navigate("mapa/-33.4180/-70.6050") }) {
+                        Icon(Icons.Default.Map, contentDescription = "Mapa")
+                    }
+                }
+            )
+        }
+    ) { pad ->
         LazyColumn(Modifier.padding(pad).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             item { Text("Operarios con marcas: ${filas.size} · Sospechosas por visar: ${filas.count { it.marca.estado == EstadoMarca.SOSPECHOSA && it.visada == null }}") }
             items(filas, key = { it.marca.id }) { f ->
@@ -66,6 +85,9 @@ fun ForemanScreen(vm: ForemanViewModel = hiltViewModel()) {
                             TextButton(onClick = { vm.visar(f.marca.id, true) }) { Text("Aprobar") }
                             TextButton(onClick = { vm.visar(f.marca.id, false) }) { Text("Rechazar") }
                         }
+                        TextButton(
+                            onClick = { nav.navigate("detalle-visacion/${f.marca.id}") },
+                        ) { Text("Ver detalle") }
                     }
                 }
             }

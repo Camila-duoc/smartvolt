@@ -5,10 +5,10 @@ import cl.smartvolt.asistencia.data.local.MarcaEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.domain.antifraude.RuleEngine
 import cl.smartvolt.asistencia.domain.model.*
+import cl.smartvolt.asistencia.domain.usecase.HashMarca
 import cl.smartvolt.asistencia.sensors.BleScanner
 import cl.smartvolt.asistencia.sensors.LocationProvider
 import cl.smartvolt.asistencia.sensors.SystemStateProvider
-import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
 
@@ -42,7 +42,16 @@ class RegistrarMarcaUseCase @Inject constructor(
 
         val id = UUID.randomUUID().toString()
         val previo = repo.ultimoHash(usuarioId)
-        val hash = sha256("$previo|$id|$usuarioId|$tipo|${ubicacion?.lat}|${ubicacion?.lon}|$ahora|${veredicto.estado}")
+        val hash = HashMarca.calcular(
+            hashPrevio = previo,
+            id = id,
+            usuarioId = usuarioId,
+            tipo = tipo.name,
+            lat = ubicacion?.lat,
+            lon = ubicacion?.lon,
+            ahora = ahora,
+            estado = veredicto.estado.name,
+        )
         repo.guardar(
             MarcaEntity(
                 id, usuarioId, faenaId, tipo, ubicacion?.lat, ubicacion?.lon, ubicacion?.accuracyM?.toDouble(),
@@ -52,7 +61,4 @@ class RegistrarMarcaUseCase @Inject constructor(
         )
         return veredicto
     }
-
-    private fun sha256(s: String): String =
-        MessageDigest.getInstance("SHA-256").digest(s.toByteArray()).joinToString("") { "%02x".format(it) }
 }

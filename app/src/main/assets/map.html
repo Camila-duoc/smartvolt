@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenStreetMap - SmartVolt</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <style>
+        #map { height: 100vh; width: 100vw; }
+        body { margin: 0; padding: 0; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+    var map = null;
+    var marker = null;
+    var circle = null;
+
+    function initMap(lat, lon, zoom) {
+        map = L.map('map').setView([lat, lon], zoom);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        marker = L.marker([lat, lon]).addTo(map);
+        marker.bindPopup("Ubicación de la faena").openPopup();
+
+        circle = L.circle([lat, lon], {
+            color: 'blue',
+            fillColor: '#3388ff',
+            fillOpacity: 0.2,
+            radius: 100 // metros, ajustable
+        }).addTo(map);
+
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng).update();
+            circle.setLatLng(e.latlng).update();
+            marker.bindPopup("Lat: " + e.latlng.lat.toFixed(6) + "<br>Lon: " + e.latlng.lng.toFixed(6)).openPopup();
+        });
+    }
+</script>
+</body>
+</html>

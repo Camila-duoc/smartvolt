@@ -5,6 +5,7 @@ import androidx.room.withTransaction
 import cl.smartvolt.asistencia.data.local.*
 import cl.smartvolt.asistencia.data.remote.*
 import cl.smartvolt.asistencia.domain.model.*
+import java.util.UUID
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.decodeFromString
@@ -57,6 +58,10 @@ class AttendanceRepository @Inject constructor(
     suspend fun visar(marcaId: String, supervisorId: String, aprobada: Boolean, ahoraMs: Long) =
         marcas.insertVisacion(VisacionEntity(marcaId, supervisorId, aprobada, ahoraMs))
 
+    suspend fun marcaPorId(id: String) = marcas.marcaPorId(id)
+    suspend fun visacionPorMarca(marcaId: String) = marcas.visacionPorMarca(marcaId)
+    fun todasLasMarcas(): Flow<List<MarcaEntity>> = marcas.todasLasMarcas()
+
     // ---------- Sincronización ----------
     /** Envía marcas pendientes. Lanza excepción si no hay red (el Worker reintenta). */
     suspend fun sincronizarMarcas() {
@@ -105,4 +110,65 @@ class AttendanceRepository @Inject constructor(
             )
         })
     }
+
+    // ---------- Horas extras ----------
+
+    suspend fun solicitarHoraExtra(
+        usuarioId: String,
+        marcaId: String?,
+        fecha: Long,
+        horas: Double,
+        motivo: String
+    ): HoraExtraEntity {
+        val id = UUID.randomUUID().toString()
+        val h = HoraExtraEntity(
+            id = id,
+            usuarioId = usuarioId,
+            marcaId = marcaId,
+            fecha = fecha,
+            horas = horas,
+            motivo = motivo,
+            estado = EstadoHoraExtra.PENDIENTE,
+            supervisorId = null,
+            timestampResolucion = null
+        )
+        db.horaExtraDao().insertarHoraExtra(h)
+        return h
+    }
+
+    suspend fun horasExtraDeUsuario(usuarioId: String): List<HoraExtraEntity> =
+        db.horaExtraDao().horasExtraDeUsuario(usuarioId)
+
+    suspend fun horasExtraPendientes(): List<HoraExtraEntity> =
+        db.horaExtraDao().horasExtraPorEstado(EstadoHoraExtra.PENDIENTE)
+
+    suspend fun aprobarRechazarHoraExtra(
+        id: String,
+        supervisorId: String,
+        aprobada: Boolean
+    ) {
+        val h = db.horaExtraDao().horaExtraPorId(id) ?: return
+        val ahora = System.currentTimeMillis()
+        val actualizada = h.copy(
+            estado = if (aprobada) EstadoHoraExtra.APROBADA else EstadoHoraExtra.RECHAZADA,
+            supervisorId = supervisorId,
+            timestampResolucion = ahora
+        )
+        db.horaExtraDao().actualizarHoraExtra(actualizada)
+    }
+
+    suspend fun horasExtraPorRango(desde: Long, hasta: Long): List<HoraExtraEntity> =
+        db.horaExtraDao().horasExtraPorRango(desde, hasta)
+
+    /** Resumen de horas extra de un usuario (cantidad y total de horas por estado). */
+    suspend fun resumenHorasExtraUsuario(usuarioId: String): List<ResumenHoraExtraEstado> =
+        db.horaExtraDao().resumenHorasExtraUsuario(usuarioId)
+
+    /** Últimas 10 solicitudes de horas extra de un usuario. */
+    suspend fun ultimasHorasExtraUsuario(usuarioId: String): List<HoraExtraEntity> =
+        db.horaExtraDao().ultimasHorasExtraUsuario(usuarioId)
+
+    /** Todas las horas extra registradas (para supervisión del capataz). */
+    suspend fun todasLasHorasExtra(): List<HoraExtraEntity> =
+        db.horaExtraDao().horasExtraPorRango(0, Long.MAX_VALUE)
 }

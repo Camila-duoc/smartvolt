@@ -62,3 +62,20 @@ data class EventoAntifraudeEntity(
 data class VisacionEntity(
     @PrimaryKey val marcaId: String, val supervisorId: String, val aprobada: Boolean, val timestamp: Long,
 )
+
+@Entity(
+    tableName = "horas_extra",
+    indices = [Index("usuarioId"), Index("estado")],
+    foreignKeys = [ForeignKey(entity = MarcaEntity::class, parentColumns = ["id"], childColumns = ["marcaId"], onDelete = ForeignKey.CASCADE)]
+)
+data class HoraExtraEntity(
+    @PrimaryKey val id: String,
+    val usuarioId: String,
+    val marcaId: String?,
+    val fecha: Long,           // timestamp UTC del día solicitado
+    val horas: Double,         // cantidad de horas solicitadas
+    val motivo: String,
+    val estado: EstadoHoraExtra, // PENDIENTE, APROBADA, RECHAZADA
+    val supervisorId: String?,
+    val timestampResolucion: Long?,
+)

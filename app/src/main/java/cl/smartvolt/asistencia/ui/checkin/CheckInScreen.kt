@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.LocalNavController
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -78,6 +79,7 @@ fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { sinPermisos = faltanPermisos(ctx) }
     LaunchedEffect(Unit) { if (sinPermisos) launcher.launch(permisosCriticos()) }
 
+    val nav = LocalNavController.current
     Scaffold(topBar = { TopAppBar(title = { Text("Marcar asistencia · ${vm.usuarioId}") }) }) { pad ->
         Column(Modifier.padding(pad).padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (sinPermisos) {
@@ -95,6 +97,13 @@ fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
             ui.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             ui.veredicto?.let { ResultadoCard(it) }
             Text("Marcas pendientes de envío: $pendientes")
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = { nav.navigate("mis-horas-extra") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Mis horas extra")
+            }
 
             if (BuildConfig.USE_FAKE_SENSORS) {
                 val actual by DemoState.escenario.collectAsState()
