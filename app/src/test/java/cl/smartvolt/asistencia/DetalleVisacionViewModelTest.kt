@@ -9,14 +9,19 @@ import cl.smartvolt.asistencia.domain.model.TipoMarca
 import cl.smartvolt.asistencia.ui.visacion.DetalleVisacionViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 class DetalleVisacionViewModelTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var repo: FakeAttendanceRepository
     private lateinit var viewModel: DetalleVisacionViewModel
@@ -27,18 +32,13 @@ class DetalleVisacionViewModelTest {
         viewModel = DetalleVisacionViewModel(repo)
     }
 
-    private class FakeAttendanceRepository : AttendanceRepository(
-        null /* db */,
-        null /* api */,
-        null /* context */
-    ) {
+    private class FakeAttendanceRepository : AttendanceRepository {
         var marcaPorIdResult: MarcaEntity? = null
         var visacionPorMarcaResult: VisacionEntity? = null
 
         override suspend fun marcaPorId(id: String) = marcaPorIdResult
         override suspend fun visacionPorMarca(marcaId: String) = visacionPorMarcaResult
         override fun contarPendientes(): Flow<Int> = flowOf(0)
-        override fun todasLasMarcas(): Flow<cl.smartvolt.asistencia.data.local.MarcaEntity> = flowOf(emptyList())
     }
 
     @Test

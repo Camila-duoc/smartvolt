@@ -1,19 +1,28 @@
 package cl.smartvolt.asistencia.ui.horasextra
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import cl.smartvolt.asistencia.ui.login.SessionState
 import cl.smartvolt.asistencia.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HoraExtraScreen(
     onNavUp: () -> Unit,
@@ -22,7 +31,10 @@ fun HoraExtraScreen(
     val ui by vm.ui.collectAsState()
     var horas by remember { mutableStateOf("") }
     var motivo by remember { mutableStateOf("") }
-    var fechaSeleccionada by remember { mutableStateOf(System.currentTimeMillis()) }
+    var diasAtras by remember { mutableStateOf(0f) }
+    val fechaSeleccionada = remember(diasAtras) {
+        System.currentTimeMillis() - (diasAtras * 86_400_000L).toLong()
+    }
 
     val fechaTxt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(fechaSeleccionada))
 
@@ -35,23 +47,21 @@ fun HoraExtraScreen(
         }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState())
         ) {
             Text("Solicitud de horas extra", style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextField(
+            OutlinedTextField(
                 value = horas,
                 onValueChange = { horas = it },
                 label = { Text("Horas solicitadas") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                    keyboardType = androidx.compose.foundation.text.KeyboardType.Number
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            TextField(
+            OutlinedTextField(
                 value = motivo,
                 onValueChange = { motivo = it },
                 label = { Text("Motivo / justificación") },
@@ -61,12 +71,13 @@ fun HoraExtraScreen(
 
             Text("Fecha: $fechaTxt", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = if (diasAtras == 0f) "Hoy" else "Hace ${diasAtras.toInt()} día(s)",
+                style = MaterialTheme.typography.bodySmall
+            )
             Slider(
-                value = (fechaSeleccionada / 86400000.0).roundToInt().toFloat(),
-                onValueChange = {
-                    // Slider aproximado para demo; en producción usar DatePicker
-                    fechaSeleccionada = it.toLong() * 86400000L
-                },
+                value = diasAtras,
+                onValueChange = { diasAtras = it },
                 valueRange = 0f..30f,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -75,9 +86,9 @@ fun HoraExtraScreen(
             Button(
                 onClick = {
                     val h = horas.toDoubleOrNull() ?: 0.0
-                    vm.solicitar(null, fechaSeleccionada, h, motivo)
+                    vm.solicitarHoraExtra(null, fechaSeleccionada, h, motivo)
                 },
-                enabled = ui.cargando.not() && horas.isNotBlank() && motivo.isNotBlank(),
+                enabled = !ui.cargando && horas.isNotBlank() && motivo.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (ui.cargando) CircularProgressIndicator(modifier = Modifier.size(20.dp))

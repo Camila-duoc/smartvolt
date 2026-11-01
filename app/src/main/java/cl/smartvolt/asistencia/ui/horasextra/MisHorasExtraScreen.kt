@@ -1,47 +1,76 @@
 package cl.smartvolt.asistencia.ui.horasextra
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import cl.smartvolt.asistencia.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MisHorasExtraScreen(
     onNavUp: () -> Unit,
+    onSolicitar: () -> Unit = {},
     vm: MisHorasExtraViewModel = hiltViewModel(),
 ) {
     val ui by vm.ui.collectAsState()
-    vm.cargarMisHorasExtra()
+    LaunchedEffect(Unit) { vm.cargarMisHorasExtra() }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Mis horas extra") },
-                navigationIcon = { IconButton(onClick = onNavUp) { Icon(Icons.Default.ArrowBack, contentDescription = "Atrás") } }
+                navigationIcon = {
+                    IconButton(onClick = onNavUp) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                    }
+                }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onSolicitar) {
+                Icon(Icons.Default.Add, contentDescription = "Solicitar horas extra")
+            }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (ui.cargando && ui.horasExtra.isEmpty()) {
-                androidx.compose.foundation.layout.Box(
+                Box(
                     modifier = Modifier.fillMaxSize(),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
+                    contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
                 }
             } else {
-                ResumenHorasExtraScreen(ui.horasExtra, onNavUp)
+                ResumenHorasExtraContent(horasSolicitadas = ui.horasExtra)
 
                 ui.error?.let { error ->
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp)
+                    )
                 }
             }
         }

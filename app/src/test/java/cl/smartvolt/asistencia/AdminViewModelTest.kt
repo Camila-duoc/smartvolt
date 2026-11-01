@@ -8,13 +8,18 @@ import cl.smartvolt.asistencia.domain.model.TipoMarca
 import cl.smartvolt.asistencia.ui.admin.AdminViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 class AdminViewModelTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var repo: FakeAttendanceRepositoryForAdmin
     private lateinit var viewModel: AdminViewModel
@@ -25,11 +30,7 @@ class AdminViewModelTest {
         viewModel = AdminViewModel(repo)
     }
 
-    private class FakeAttendanceRepositoryForAdmin : AttendanceRepository(
-        null /* db */,
-        null /* api */,
-        null /* context */
-    ) {
+    private class FakeAttendanceRepositoryForAdmin : AttendanceRepository {
         override fun todasLasMarcas(): Flow<List<MarcaEntity>> = flowOf(
             listOf(
                 MarcaEntity("m1", "OP-0001", "F01", TipoMarca.IN, -33.4180, -70.6050, 5.0, 1000L, 1000L, EstadoMarca.VALIDA, "", SyncEstado.ENVIADA, "GENESIS", "h1"),

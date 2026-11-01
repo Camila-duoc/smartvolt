@@ -10,7 +10,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Upsert
 import androidx.room.migration.Migration
-import androidx.room.sqlite.SupportSQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import cl.smartvolt.asistencia.domain.model.EstadoHoraExtra
 import cl.smartvolt.asistencia.domain.model.SyncEstado
 import kotlinx.coroutines.flow.Flow
@@ -98,7 +98,7 @@ interface HoraExtraDao {
     suspend fun horasExtraPorRango(desde: Long, hasta: Long): List<HoraExtraEntity>
 
     /** Horas extras de un usuario agrupadas por estado para el resumen del operario. */
-    @Query("SELECT estado, COUNT(*) as cant, SUM(horas) as totalHoras FROM horas_extra WHERE usuarioId = :u GROUP BY estado")
+    @Query("SELECT estado, COUNT(*) as cantidad, SUM(horas) as totalHoras FROM horas_extra WHERE usuarioId = :u GROUP BY estado")
     suspend fun resumenHorasExtraUsuario(u: String): List<ResumenHoraExtraEstado>
 
     @Query("SELECT * FROM horas_extra WHERE usuarioId = :u ORDER BY fecha DESC LIMIT 10")

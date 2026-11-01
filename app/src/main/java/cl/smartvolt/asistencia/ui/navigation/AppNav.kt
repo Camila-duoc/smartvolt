@@ -1,15 +1,13 @@
 package cl.smartvolt.asistencia.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.compose.navArgument
+import androidx.navigation.navArgument
 import cl.smartvolt.asistencia.domain.model.Rol
 import cl.smartvolt.asistencia.ui.admin.AdminScreen
 import cl.smartvolt.asistencia.ui.calendario.CalendarioScreen
@@ -22,54 +20,66 @@ import cl.smartvolt.asistencia.ui.login.LoginScreen
 import cl.smartvolt.asistencia.ui.mapa.MapaScreen
 import cl.smartvolt.asistencia.ui.visacion.DetalleVisacionScreen
 
+/** NavController ambiente para que las pantallas puedan navegar sin recibirlo por parámetro. */
+val LocalNavController = staticCompositionLocalOf<NavHostController> {
+    error("NavController no disponible")
+}
+
 @Composable
 fun AppNav() {
     val nav = rememberNavController()
-    NavHost(nav, startDestination = "login") {
-        composable("login") {
-            LoginScreen { rol ->
-                val destino = when (rol) {
-                    Rol.OPERARIO -> "operario"
-                    Rol.CAPATAZ -> "capataz"
-                    Rol.ADMIN -> "admin"
-                }
-                nav.navigate(destino) { popUpTo("login") { inclusive = true } }
+    CompositionLocalProvider(LocalNavController provides nav) {
+        NavHost(nav, startDestination = "login") {
+            composable("login") {
+                LoginScreen(
+                    onLogin = { rol ->
+                        val destino = when (rol) {
+                            Rol.OPERARIO -> "operario"
+                            Rol.CAPATAZ -> "capataz"
+                            Rol.ADMIN -> "admin"
+                        }
+                        nav.navigate(destino) { popUpTo("login") { inclusive = true } }
+                    }
+                )
             }
-        }
-        composable("operario") { CheckInScreen() }
-        composable("capataz") { ForemanScreen() }
-        composable("horas-extra") {
-            HoraExtraScreen { nav.popBackStack() }
-        }
-        composable("mis-horas-extra") {
-            MisHorasExtraScreen { nav.popBackStack() }
-        }
-        composable("aprobar-horas-extra") {
-            AprobarHoraExtraScreen { nav.popBackStack() }
-        }
-        composable("calendario") {
-            CalendarioScreen { nav.popBackStack() }
-        }
-        composable(
-            "mapa/{lat}/{lon}",
-            arguments = listOf(
-                navArgument("lat") { type = androidx.navigation.NavType.FloatType },
-                navArgument("lon") { type = androidx.navigation.NavType.FloatType }
-            )
-        ) { backStackEntry ->
-            val lat = backStackEntry.arguments?.getFloat("lat") ?: -33.4180f
-            val lon = backStackEntry.arguments?.getFloat("lon") ?: -70.6050f
-            MapaScreen(lat = lat.toDouble(), lon = lon.toDouble()) { nav.popBackStack() }
-        }
-        composable(
-            "detalle-visacion/{marcaId}",
-            arguments = listOf(navArgument("marcaId") { type = androidx.navigation.NavType.StringType })
-        ) { backStackEntry ->
-            val marcaId = backStackEntry.arguments?.getString("marcaId") ?: ""
-            DetalleVisacionScreen(marcaId = marcaId) { nav.popBackStack() }
-        }
-        composable("admin") {
-            AdminScreen { nav.popBackStack() }
+            composable("operario") { CheckInScreen() }
+            composable("capataz") { ForemanScreen() }
+            composable("horas-extra") {
+                HoraExtraScreen(onNavUp = { nav.popBackStack() })
+            }
+            composable("mis-horas-extra") {
+                MisHorasExtraScreen(
+                    onNavUp = { nav.popBackStack() },
+                    onSolicitar = { nav.navigate("horas-extra") }
+                )
+            }
+            composable("aprobar-horas-extra") {
+                AprobarHoraExtraScreen(onNavUp = { nav.popBackStack() })
+            }
+            composable("calendario") {
+                CalendarioScreen(onNavUp = { nav.popBackStack() })
+            }
+            composable(
+                "mapa/{lat}/{lon}",
+                arguments = listOf(
+                    navArgument("lat") { type = androidx.navigation.NavType.FloatType },
+                    navArgument("lon") { type = androidx.navigation.NavType.FloatType }
+                )
+            ) { backStackEntry ->
+                val lat = backStackEntry.arguments?.getFloat("lat") ?: -33.4180f
+                val lon = backStackEntry.arguments?.getFloat("lon") ?: -70.6050f
+                MapaScreen(lat = lat.toDouble(), lon = lon.toDouble(), onNavUp = { nav.popBackStack() })
+            }
+            composable(
+                "detalle-visacion/{marcaId}",
+                arguments = listOf(navArgument("marcaId") { type = androidx.navigation.NavType.StringType })
+            ) { backStackEntry ->
+                val marcaId = backStackEntry.arguments?.getString("marcaId") ?: ""
+                DetalleVisacionScreen(marcaId = marcaId, onNavUp = { nav.popBackStack() })
+            }
+            composable("admin") {
+                AdminScreen(onNavUp = { nav.popBackStack() })
+            }
         }
     }
 }

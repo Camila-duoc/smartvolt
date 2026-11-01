@@ -1,18 +1,24 @@
 package cl.smartvolt.asistencia.ui.visacion
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import cl.smartvolt.asistencia.data.local.MarcaEntity
 import cl.smartvolt.asistencia.domain.model.EstadoMarca
 import cl.smartvolt.asistencia.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleVisacionScreen(
     marcaId: String,
@@ -20,25 +26,24 @@ fun DetalleVisacionScreen(
     vm: DetalleVisacionViewModel = hiltViewModel(),
 ) {
     val ui by vm.ui.collectAsState()
-    vm.cargarDetalle(marcaId)
+    LaunchedEffect(marcaId) { vm.cargarDetalle(marcaId) }
 
     val marca = ui.marca
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detalle de visita") },
+                title = { Text("Detalle de visación") },
                 navigationIcon = { IconButton(onClick = onNavUp) { Icon(Icons.Default.ArrowBack, contentDescription = "Atrás") } }
             )
-        },
-        modifier = Modifier.fillMaxSize()
+        }
     ) { padding ->
         if (ui.cargando && marca == null) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .wrapContentSize(Alignment.Center)
+                    .padding(padding),
+                contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
@@ -46,8 +51,8 @@ fun DetalleVisacionScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .wrapContentSize(Alignment.Center)
+                    .padding(padding),
+                contentAlignment = Alignment.Center
             ) {
                 Text("No se encontró la marca", style = MaterialTheme.typography.bodyMedium)
             }
@@ -80,7 +85,7 @@ fun DetalleVisacionScreen(
 
                 Text("Ubicación", style = MaterialTheme.typography.titleMedium)
                 val ubicacionTxt = if (marca.lat != null && marca.lon != null) {
-                    "${marca.lat?.toString()}, ${marca.lon?.toString()}"
+                    "${marca.lat}, ${marca.lon}"
                 } else {
                     "Sin ubicación"
                 }

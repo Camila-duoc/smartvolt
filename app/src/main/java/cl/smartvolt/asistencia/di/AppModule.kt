@@ -5,6 +5,8 @@ import androidx.room.Room
 import cl.smartvolt.asistencia.BuildConfig
 import cl.smartvolt.asistencia.data.local.AppDatabase
 import cl.smartvolt.asistencia.data.remote.ApiService
+import cl.smartvolt.asistencia.data.repository.AttendanceRepository
+import cl.smartvolt.asistencia.data.repository.RoomAttendanceRepository
 import cl.smartvolt.asistencia.domain.antifraude.RuleEngine
 import cl.smartvolt.asistencia.sensors.*
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -28,6 +30,9 @@ object AppModule {
 
     @Provides fun configDao(db: AppDatabase) = db.configDao()
     @Provides fun marcaDao(db: AppDatabase) = db.marcaDao()
+
+    @Provides @Singleton
+    fun attendanceRepository(impl: RoomAttendanceRepository): AttendanceRepository = impl
 
     @Provides @Singleton
     fun api(): ApiService {

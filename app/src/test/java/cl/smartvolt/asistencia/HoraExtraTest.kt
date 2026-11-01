@@ -21,9 +21,7 @@ class HoraExtraTest {
         repo = FakeRepoForHoraExtra()
     }
 
-    private class FakeRepoForHoraExtra : AttendanceRepository(
-        null, null, null
-    ) {
+    private class FakeRepoForHoraExtra : AttendanceRepository {
         var store = mutableMapOf<String, HoraExtraEntity>()
         override suspend fun solicitarHoraExtra(
             usuarioId: String,
@@ -54,9 +52,22 @@ class HoraExtraTest {
             )
         }
         override fun contarPendientes(): Flow<Int> = flowOf(0)
-        override fun todasLasMarcas(): Flow<cl.smartvolt.asistencia.data.local.MarcaEntity> = flowOf(emptyList())
         override suspend fun horasExtraPorRango(desde: Long, hasta: Long): List<HoraExtraEntity> =
             store.values.filter { it.fecha >= desde && it.fecha <= hasta }.toList()
+        override suspend fun resumenHorasExtraUsuario(usuarioId: String): List<cl.smartvolt.asistencia.data.local.ResumenHoraExtraEstado> =
+            store.values.filter { it.usuarioId == usuarioId }
+                .groupBy { it.estado }
+                .map { (estado, lista) ->
+                    cl.smartvolt.asistencia.data.local.ResumenHoraExtraEstado(
+                        estado = estado,
+                        cantidad = lista.size,
+                        totalHoras = lista.sumOf { it.horas }
+                    )
+                }
+        override suspend fun ultimasHorasExtraUsuario(usuarioId: String): List<HoraExtraEntity> =
+            store.values.filter { it.usuarioId == usuarioId }
+                .sortedByDescending { it.fecha }
+                .take(10)
     }
 
     @Test
@@ -64,7 +75,7 @@ class HoraExtraTest {
         val h = repo.solicitarHoraExtra("OP-0001", null, 1000L, 2.5, "Entrega urgente")
         assertNotNull(h.id)
         assertEquals("OP-0001", h.usuarioId)
-        assertEquals(2.5, h.horas)
+        assertEquals(2.5, h.horas, 0.001)
         assertEquals(EstadoHoraExtra.PENDIENTE, h.estado)
         assertNull(h.supervisorId)
         assertNull(h.timestampResolucion)
@@ -113,11 +124,11 @@ class HoraExtraTest {
         val resumen = repo.resumenHorasExtraUsuario("OP-0001")
         val porEstado = resumen.associate { it.estado to it }
         assertEquals(1, porEstado[EstadoHoraExtra.PENDIENTE]!!.cantidad)
-        assertEquals(2.0, porEstado[EstadoHoraExtra.PENDIENTE]!!.totalHoras)
+        assertEquals(2.0, porEstado[EstadoHoraExtra.PENDIENTE]!!.totalHoras, 0.001)
         assertEquals(1, porEstado[EstadoHoraExtra.APROBADA]!!.cantidad)
-        assertEquals(3.0, porEstado[EstadoHoraExtra.APROBADA]!!.totalHoras)
+        assertEquals(3.0, porEstado[EstadoHoraExtra.APROBADA]!!.totalHoras, 0.001)
         assertEquals(1, porEstado[EstadoHoraExtra.RECHAZADA]!!.cantidad)
-        assertEquals(1.5, porEstado[EstadoHoraExtra.RECHAZADA]!!.totalHoras)
+        assertEquals(1.5, porEstado[EstadoHoraExtra.RECHAZADA]!!.totalHoras, 0.001)
     }
 
     @Test
