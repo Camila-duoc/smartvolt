@@ -1,44 +1,117 @@
-# Smart-Volt Asistencia · Esqueleto del MVP (DSY1105)
+# Smart-Volt Asistencia
 
-Aplicación Android (Kotlin · Jetpack Compose · Material 3 · MVVM · Room · Retrofit · Hilt · WorkManager) para
-control de asistencia antifraude con modo offline. Corresponde a la **Propuesta B simplificada** del documento
-"Propuestas de Diseño" (motor de reglas + sensores abstraídos), en un solo módulo Gradle.
+Aplicación Android de control de asistencia en faena, escrita en **Kotlin + Jetpack Compose + Room + Hilt**. Funciona offline-first: las marcas se validan con reglas antifraude en el dispositivo, se guardan en Room y se sincronizan después con WorkManager.
 
-> **Estado:** esqueleto escrito sin poder compilarlo en Android Studio. Es probable que Studio sugiera ajustes
-> de versiones o pequeños errores de compilación al primer *Sync*. Las pruebas unitarias de `GeoUtils` y
-> `RuleEngine` no dependen de Android.
+Todos los datos son **ficticios**, pensados para una demo académica sin hardware real.
 
-## Cómo abrirlo
-1. Android Studio (versión estable reciente) → **Open** → carpeta `SmartVoltAsistencia`.
-2. Deja que haga *Gradle Sync* (usa `gradle/wrapper/gradle-wrapper.properties`; si pide el wrapper, acepta que lo descargue).
-   Si algún número de versión falla, ajústalo en `gradle/libs.versions.toml` (Studio suele sugerir el correcto).
-3. Elige la variante **demoDebug** (sensores simulados) y ejecuta en emulador o teléfono.
-4. Ingreso de prueba (PIN `1234` para todos): `OP-0001` (operario), `CAP-0001` (capataz), `ADM-0001` (admin, pantalla pendiente).
+## Stack
 
-## Variantes
-| Variante | Sensores | Uso |
-|---|---|---|
-| `demo` | GPS/BLE/estado del sistema **simulados** (`FakeSensors.kt`) | Desarrollo y defensa sin hardware. Selector de escenarios en la pantalla de marcar. |
-| `campo` | `FusedLocationProvider`, `BluetoothLeScanner`, `Settings.Global` reales | Pruebas en teléfono físico con beacons iBeacon. |
+- Kotlin 2.0.20, Jetpack Compose (BOM 2024.09.00) y Material 3
+- Room 2.6.1 con KSP
+- Hilt 2.52 (inyección de dependencias, incluido `HiltWorker`)
+- WorkManager 2.9.1 para la sincronización
+- Retrofit 2.11.0 + kotlinx.serialization para la API
+- Navigation Compose 2.8.0
+- AGP 8.5.2 / Gradle 8.9 (según `gradle-wrapper.properties`)
+- `compileSdk` y `targetSdk` 35, `minSdk` 26, Java 17
 
-## Qué incluye
-- `domain/geo/GeoUtils.kt`: Haversine, círculo y polígono (ray casting) con margen por precisión de GPS.
-- `domain/antifraude/*`: 7 reglas (mock location, secuencia, geofence, beacon, presencia física, modo desarrollador, reloj) y `RuleEngine`.
-- `domain/usecase/RegistrarMarcaUseCase.kt`: captura evidencia, evalúa, calcula hash encadenado y guarda en Room.
-- `data/*`: Room (8 entidades), Retrofit (`ApiService`), repositorio offline-first y carga de `assets/seed.json` (datos sintéticos).
-- `sync/SyncWorker.kt`: envío por lotes con reintentos y restricción de red.
-- `ui/*`: Login, Marcar (operario), Panel de presencia con visación (capataz). Administración queda como TODO.
-- `src/test`: pruebas de geofencing y de las reglas antifraude.
+## Variantes de compilación (flavors)
 
-## Pendiente / siguientes pasos
-- Pantallas de Administración, historial del operario y exportación (HU-ADM-*, HU-OPE-03).
-- Autenticación real contra el backend (hoy PIN fijo de demostración).
-- Ancla de hora del servidor en `TrustedClock` (RNF-07) y cifrado de Room con SQLCipher (RNF-08).
-- Backend Spring Boot según `openapi.yaml` (o un mock: MockWebServer / JSON Server).
-- Notificaciones locales y manejo de GPS/Bluetooth apagados con guía al usuario (RF-53, RF-56).
+| Flavor | Sensores GPS/BLE | API | Uso |
+| --- | --- | --- | --- |
+| `demo` | Simulados (`FakeSensors`) | Simulada (`FakeApiService`, acepta todo) | Probar y presentar sin hardware ni backend |
+| `campo` | Reales (Fused Location + escáner BLE) | Retrofit contra `API_BASE_URL` | Pruebas en terreno con backend real |
+
+En Android Studio elige la variante en **Build Variants** (por ejemplo `demoDebug`). En `demo` no se piden permisos de ubicación ni Bluetooth, y la pantalla de marcar muestra chips para elegir el escenario simulado.
+
+## Requisitos
+
+- Android Studio reciente con JDK 17 (el JBR incluido sirve).
+- SDK de Android 35 instalado.
+- Emulador o dispositivo con Android 8.0 (API 26) o superior.
+- `local.properties` con la ruta del SDK (Android Studio lo genera al abrir el proyecto).
+
+Abre la carpeta en Android Studio, espera el *Gradle Sync* y pulsa **Run**.
+
+## Acceso demo
+
+El PIN de todos los usuarios de la semilla es **1234**.
+
+| Perfil | Código de ejemplo | Pantalla inicial |
+| --- | --- | --- |
+| Operario | `OP-0001` | Marcar asistencia |
+| Capataz | `CAP-0001`, `CAP-0002` | Panel de presencia de su faena |
+| Administración | `ADM-0001` | Resumen administrativo |
+
+La semilla (`assets/seed.json`) incluye 4 faenas, 11 frentes, 11 beacons, 27 usuarios y 122 marcas, y se carga la primera vez que se abre la pantalla de login.
+
+## Funcionalidades
+
+### Operario
+- **Marcar entrada y salida** con validación automática: cada marca pasa por el motor de reglas antifraude (`RuleEngine`) y muestra el veredicto (VÁLIDA, SOSPECHOSA o RECHAZADA) con el detalle de cada regla.
+- **Reglas**: ubicación simulada (mock location), secuencia entrada/salida, geocerca, beacon autorizado, presencia física, modo desarrollador y reloj.
+- **Cadena de hash** por marca (`HashMarca`) para detectar alteraciones.
+- **Mi historial** (calendario) y **mapa** de la faena.
+- **Horas extra**: solicitar y consultar el estado de las propias solicitudes.
+- Contador de marcas pendientes de envío.
+
+### Capataz
+- Panel con la última marca de cada operario de su faena.
+- **Visación** de marcas sospechosas (aprobar o rechazar), con el detalle de la evidencia.
+- **Aprobación de horas extra**, calendario y mapa.
+
+### Administración
+- Resumen de marcas (total, válidas, sospechosas, rechazadas, pendientes de sincronizar) y por faena, usuario y estado.
+- **Marcas no válidas por faena** (porcentaje de sospechosas y rechazadas sobre el total de cada faena).
+- **Alertas recientes** en solo lectura (últimas marcas sospechosas o rechazadas).
+- Resumen de horas extra (solicitudes, pendientes, aprobadas y horas aprobadas, rechazadas).
+- **Exportación** a CSV (todas las marcas) y a PDF (resumen), compartidos con el selector de Android mediante `FileProvider`.
+
+## Sincronización
+
+`SyncScheduler` encola un `SyncWorker` (WorkManager, con restricción de red conectada y reintento exponencial) cada vez que se guarda una marca. El worker envía las marcas pendientes y luego intenta actualizar la configuración. En `demo` la API es simulada, así que las marcas pasan a ENVIADA sin backend. Para probar el modo offline, activa el modo avión, marca y vuelve a conectar.
+
+## Estructura del proyecto
+
+```text
+app/src/main/java/cl/smartvolt/asistencia/
+├── MainActivity.kt, SmartVoltApp.kt
+├── data/
+│   ├── local/        # Entities.kt, Daos.kt (Room)
+│   ├── remote/       # Api.kt (Retrofit + DTOs), FakeApi.kt (API de demo)
+│   └── repository/   # AttendanceRepository + RoomAttendanceRepository
+├── di/               # AppModule.kt (Hilt)
+├── domain/
+│   ├── antifraude/   # Rules.kt, RuleEngine.kt
+│   ├── geo/          # GeoUtils.kt
+│   ├── model/        # Models.kt
+│   └── usecase/      # RegistrarMarca, HashMarca, SolicitarHoraExtra, ExportarMarcasCsv, ExportarReportePdf
+├── sensors/          # GPS/BLE reales y simulados
+├── sync/             # SyncWorker y SyncScheduler
+└── ui/               # login, checkin, foreman, visacion, admin, horasextra, calendario, mapa, navigation, theme
+```
 
 ## Pruebas
-`./gradlew testDemoDebugUnitTest` (o ejecutar las clases de `src/test` desde Studio).
 
-## Datos
-Todos los datos son **ficticios/sintéticos** (Ley 21.719 y Ley 19.628). Los UUID de beacons se generan de forma determinista y no corresponden a hardware real.
+Las pruebas unitarias están en `app/src/test`. Desde Android Studio, ejecuta la carpeta `test` o la tarea Gradle `testDemoDebugUnitTest`. Cubren:
+
+- Geometría y perímetros (`GeoUtils`).
+- Reglas antifraude (`RuleEngine`).
+- Integridad del hash de marcas (`HashMarca`).
+- Horas extra (cálculo y ViewModels).
+- Calendario, visación y exportación CSV.
+- Métricas de administración, alertas y resumen para PDF.
+- API simulada de demo (`FakeApiService`).
+
+## Limitaciones conocidas
+
+- No hay backend real: en `demo` la API es simulada y en `campo` se espera un servidor en `API_BASE_URL`.
+- La autenticación es de demostración (PIN fijo) y la sesión vive en memoria.
+- La base de datos no está cifrada todavía (SQLCipher pendiente, RNF-08).
+- El reloj de referencia no se ancla a la hora del servidor (pendiente).
+- El PDF es un resumen de texto simple; el CSV incluye todas las marcas.
+- Los datos son sintéticos y no representan personas reales.
+
+## Reiniciar la demo
+
+Para volver a cargar la semilla, borra los datos de la app desde Ajustes de Android (**Almacenamiento → Borrar datos**) o desinstala y vuelve a instalar.

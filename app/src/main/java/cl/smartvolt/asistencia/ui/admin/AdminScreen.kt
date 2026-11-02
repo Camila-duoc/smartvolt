@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.smartvolt.asistencia.domain.model.EstadoMarca
+import cl.smartvolt.asistencia.domain.usecase.ExportarReportePdf
 import cl.smartvolt.asistencia.ui.navigation.LocalNavController
 import cl.smartvolt.asistencia.ui.theme.*
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,7 @@ fun AdminScreen(
 ) {
     val m by vm.metricas.collectAsState()
     val csv by vm.csv.collectAsState()
+    val pdf by vm.pdf.collectAsState()
     val context = LocalContext.current
     val nav = LocalNavController.current
 
@@ -52,6 +54,21 @@ fun AdminScreen(
             }
             compartirCsv(context, archivo)
             vm.limpiarExportacion()
+        }
+    }
+
+    LaunchedEffect(pdf) {
+        pdf?.let { lineas ->
+            val archivo = withContext(Dispatchers.IO) {
+                val dir = File(context.cacheDir, "exports").apply { mkdirs() }
+                val nombre = "resumen_" +
+                    SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date()) + ".pdf"
+                File(dir, nombre).apply {
+                    outputStream().use { ExportarReportePdf.escribir("Smart-Volt · Resumen administrativo", lineas, it) }
+                }
+            }
+            compartirPdf(context, archivo)
+            vm.limpiarPdf()
         }
     }
 
@@ -135,6 +152,28 @@ fun AdminScreen(
                     }
                 }
 
+                OutlinedButton(
+                    onClick = { vm.exportarPdf() },
+                    enabled = !m.exportando,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Exportar resumen (PDF)") }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Marcas no válidas por faena", style = MaterialTheme.typography.titleMedium)
+                if (m.noValidasPorFaenaPct.isEmpty()) {
+                    Text("Sin datos", style = MaterialTheme.typography.bodySmall)
+                }
+                m.noValidasPorFaenaPct.entries.sortedBy { it.key }.forEach { (faena, pct) ->
+                    FilaResumen(faena, "${"%.1f".format(Locale.US, pct)} %")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Alertas recientes (solo lectura)", style = MaterialTheme.typography.titleMedium)
+                if (m.alertas.isEmpty()) {
+                    Text("No hay marcas sospechosas ni rechazadas", style = MaterialTheme.typography.bodySmall)
+                }
+                m.alertas.forEach { FilaAlerta(it) }
+
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Marcas por faena", style = MaterialTheme.typography.titleMedium)
                 m.marcasPorFaena.entries.sortedByDescending { it.value }.forEach { (faena, count) ->
@@ -214,4 +253,32 @@ private fun compartirCsv(context: Context, archivo: File) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent, "Compartir marcas"))
+}
+
+@Composable
+private fun FilaAlerta(a: AlertaResumen) {
+    val color = if (a.estado == EstadoMarca.RECHAZADA) Bad else Warn
+    val fecha = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(a.timestampUtc))
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f))
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text("${a.usuarioId} · ${a.faenaId} · ${a.estado.name}", style = MaterialTheme.typography.bodyMedium, color = color)
+            Text(fecha, style = MaterialTheme.typography.bodySmall)
+            if (a.motivo.isNotBlank()) Text(a.motivo, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+/** Comparte el PDF del resumen mediante el selector de apps del sistema. */
+private fun compartirPdf(context: Context, archivo: File) {
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", archivo)
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "application/pdf"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        putExtra(Intent.EXTRA_SUBJECT, "Resumen SmartVolt")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(intent, "Compartir resumen"))
 }

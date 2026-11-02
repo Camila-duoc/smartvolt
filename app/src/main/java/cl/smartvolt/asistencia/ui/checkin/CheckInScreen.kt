@@ -69,7 +69,7 @@ private fun permisosCriticos(): Array<String> = buildList {
     if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
 }.toTypedArray()
 
-private fun faltanPermisos(c: Context) = permisosCriticos()
+private fun faltanPermisos(c: Context) = !BuildConfig.USE_FAKE_SENSORS && permisosCriticos()
     .filter { it != Manifest.permission.POST_NOTIFICATIONS }
     .any { ContextCompat.checkSelfPermission(c, it) != PackageManager.PERMISSION_GRANTED }
 

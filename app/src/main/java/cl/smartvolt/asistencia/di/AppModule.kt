@@ -5,6 +5,7 @@ import androidx.room.Room
 import cl.smartvolt.asistencia.BuildConfig
 import cl.smartvolt.asistencia.data.local.AppDatabase
 import cl.smartvolt.asistencia.data.remote.ApiService
+import cl.smartvolt.asistencia.data.remote.FakeApiService
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.data.repository.RoomAttendanceRepository
 import cl.smartvolt.asistencia.domain.antifraude.RuleEngine
@@ -36,6 +37,7 @@ object AppModule {
 
     @Provides @Singleton
     fun api(): ApiService {
+        if (BuildConfig.USE_FAKE_API) return FakeApiService() // demo: sin backend
         val client = OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
             .build()
