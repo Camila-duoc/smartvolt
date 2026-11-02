@@ -20,8 +20,8 @@ android {
     // demo = sensores simulados (GPS/BLE) para probar sin hardware; campo = sensores reales.
     flavorDimensions += "modo"
     productFlavors {
-        create("demo") { dimension = "modo"; applicationIdSuffix = ".demo"; buildConfigField("boolean", "USE_FAKE_SENSORS", "true") }
-        create("campo") { dimension = "modo"; buildConfigField("boolean", "USE_FAKE_SENSORS", "false") }
+        create("demo") { dimension = "modo"; applicationIdSuffix = ".demo"; buildConfigField("boolean", "USE_FAKE_SENSORS", "true"); buildConfigField("boolean", "USE_FAKE_API", "true") }
+        create("campo") { dimension = "modo"; buildConfigField("boolean", "USE_FAKE_SENSORS", "false"); buildConfigField("boolean", "USE_FAKE_API", "false") }
     }
     buildTypes {
         debug { buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080/\"") } // 10.0.2.2 = PC host desde el emulador

@@ -1,0 +1,48 @@
+package cl.smartvolt.asistencia.ui.visacion
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import cl.smartvolt.asistencia.data.local.MarcaEntity
+import cl.smartvolt.asistencia.data.local.VisacionEntity
+import cl.smartvolt.asistencia.data.repository.AttendanceRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/** UI del detalle de una marca y su visación. */
+data class DetalleVisacionUi(
+    val marca: MarcaEntity? = null,
+    val visada: Boolean? = null,
+    val visacionTimestamp: Long? = null,
+    val cargando: Boolean = false,
+    val error: String? = null
+)
+
+@HiltViewModel
+class DetalleVisacionViewModel @Inject constructor(
+    private val repo: AttendanceRepository,
+) : ViewModel() {
+
+    private val _ui = MutableStateFlow(DetalleVisacionUi())
+    val ui: StateFlow<DetalleVisacionUi> = _ui
+
+    /** Carga el detalle de una marca y su visación (si existe). */
+    fun cargarDetalle(marcaId: String) = viewModelScope.launch {
+        _ui.value = _ui.value.copy(cargando = true, error = null)
+        try {
+            val marca = repo.marcaPorId(marcaId) ?: return@launch
+            val visacion = repo.visacionPorMarca(marcaId)
+
+            _ui.value = DetalleVisacionUi(
+                marca = marca,
+                visada = visacion?.aprobada,
+                visacionTimestamp = visacion?.timestamp,
+                cargando = false,
+            )
+        } catch (e: Exception) {
+            _ui.value = _ui.value.copy(cargando = false, error = e.message ?: "Error al cargar el detalle")
+        }
+    }
+}

@@ -5,6 +5,7 @@ import androidx.room.withTransaction
 import cl.smartvolt.asistencia.data.local.*
 import cl.smartvolt.asistencia.data.remote.*
 import cl.smartvolt.asistencia.domain.model.*
+import java.util.UUID
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.decodeFromString
@@ -13,37 +14,107 @@ import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Contrato de acceso a datos de asistencia. Permite sustituir la implementación
+ * real (Room + Retrofit) por dobles de prueba sin instanciar Android.
+ */
+interface AttendanceRepository {
+    suspend fun usuario(id: String): UsuarioEntity? = TODO("No implementado en este doble de prueba")
+    suspend fun usuariosDeFaena(faenaId: String): List<UsuarioEntity> = TODO("No implementado en este doble de prueba")
+    suspend fun faena(id: String): FaenaEntity? = TODO("No implementado en este doble de prueba")
+    suspend fun perimetro(faenaId: String): Perimetro? = TODO("No implementado en este doble de prueba")
+    suspend fun beacons(faenaId: String): List<BeaconAutorizado> = TODO("No implementado en este doble de prueba")
+    suspend fun ultimaMarcaValida(usuarioId: String): TipoMarca? = TODO("No implementado en este doble de prueba")
+    suspend fun ultimoHash(usuarioId: String): String = TODO("No implementado en este doble de prueba")
+
+    fun historial(usuarioId: String): Flow<List<MarcaEntity>> = TODO("No implementado en este doble de prueba")
+    fun marcasDeFaena(faenaId: String): Flow<List<MarcaEntity>> = TODO("No implementado en este doble de prueba")
+    fun visaciones(): Flow<List<VisacionEntity>> = TODO("No implementado en este doble de prueba")
+    fun contarPendientes(): Flow<Int> = TODO("No implementado en este doble de prueba")
+    fun todasLasMarcas(): Flow<List<MarcaEntity>> = TODO("No implementado en este doble de prueba")
+
+    suspend fun guardar(m: MarcaEntity, lecturas: List<LecturaBle>, v: Veredicto, ahoraMs: Long): Unit =
+        TODO("No implementado en este doble de prueba")
+
+    suspend fun visar(marcaId: String, supervisorId: String, aprobada: Boolean, ahoraMs: Long): Unit =
+        TODO("No implementado en este doble de prueba")
+
+    suspend fun marcaPorId(id: String): MarcaEntity? = TODO("No implementado en este doble de prueba")
+    suspend fun visacionPorMarca(marcaId: String): VisacionEntity? = TODO("No implementado en este doble de prueba")
+
+    suspend fun sincronizarMarcas(): Unit = TODO("No implementado en este doble de prueba")
+    suspend fun sincronizarConfiguracion(): Unit = TODO("No implementado en este doble de prueba")
+    suspend fun aplicarConfiguracion(c: ConfiguracionDto): Unit = TODO("No implementado en este doble de prueba")
+    suspend fun cargarSemillaSiVacio(): Unit = TODO("No implementado en este doble de prueba")
+
+    suspend fun solicitarHoraExtra(
+        usuarioId: String,
+        marcaId: String?,
+        fecha: Long,
+        horas: Double,
+        motivo: String
+    ): HoraExtraEntity = TODO("No implementado en este doble de prueba")
+
+    suspend fun horasExtraDeUsuario(usuarioId: String): List<HoraExtraEntity> =
+        TODO("No implementado en este doble de prueba")
+
+    suspend fun horasExtraDeUsuarios(usuarioIds: List<String>): List<HoraExtraEntity> =
+        TODO("No implementado en este doble de prueba")
+
+    suspend fun horasExtraPendientes(): List<HoraExtraEntity> =
+        TODO("No implementado en este doble de prueba")
+
+    suspend fun aprobarRechazarHoraExtra(id: String, supervisorId: String, aprobada: Boolean): Unit =
+        TODO("No implementado en este doble de prueba")
+
+    suspend fun horasExtraPorRango(desde: Long, hasta: Long): List<HoraExtraEntity> =
+        TODO("No implementado en este doble de prueba")
+
+    suspend fun resumenHorasExtraUsuario(usuarioId: String): List<ResumenHoraExtraEstado> =
+        TODO("No implementado en este doble de prueba")
+
+    suspend fun ultimasHorasExtraUsuario(usuarioId: String): List<HoraExtraEntity> =
+        TODO("No implementado en este doble de prueba")
+
+    suspend fun todasLasHorasExtra(): List<HoraExtraEntity> =
+        TODO("No implementado en este doble de prueba")
+}
+
 @Singleton
-class AttendanceRepository @Inject constructor(
+class RoomAttendanceRepository @Inject constructor(
     private val db: AppDatabase,
     private val api: ApiService,
     @ApplicationContext private val context: Context,
-) {
+) : AttendanceRepository {
     private val config get() = db.configDao()
     private val marcas get() = db.marcaDao()
     private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     // ---------- Lectura local (fuente de verdad: Room) ----------
-    suspend fun usuario(id: String) = config.usuario(id)
+    override suspend fun usuario(id: String) = config.usuario(id)
 
-    suspend fun perimetro(faenaId: String): Perimetro? {
+    override suspend fun usuariosDeFaena(faenaId: String) = config.usuariosDeFaena(faenaId)
+
+    override suspend fun faena(id: String) = config.faena(id)
+
+    override suspend fun perimetro(faenaId: String): Perimetro? {
         val f = config.faena(faenaId) ?: return null
         val poly = f.poligonoJson?.let { json.decodeFromString<List<List<Double>>>(it) }?.map { LatLon(it[0], it[1]) }
         return Perimetro(f.tipoPerimetro, LatLon(f.centroLat, f.centroLon), f.radioM, poly)
     }
 
-    suspend fun beacons(faenaId: String) =
+    override suspend fun beacons(faenaId: String) =
         config.beacons(faenaId).map { BeaconAutorizado(it.uuid, it.rssiMinimo, it.frenteId) }
 
-    suspend fun ultimaMarcaValida(usuarioId: String) = marcas.ultimaNoRechazada(usuarioId)?.tipo
-    suspend fun ultimoHash(usuarioId: String) = marcas.ultimoHash(usuarioId) ?: "GENESIS"
-    fun historial(usuarioId: String): Flow<List<MarcaEntity>> = marcas.historial(usuarioId)
-    fun marcasDeFaena(faenaId: String): Flow<List<MarcaEntity>> = marcas.marcasDeFaena(faenaId)
-    fun visaciones(): Flow<List<VisacionEntity>> = marcas.visaciones()
-    fun contarPendientes(): Flow<Int> = marcas.contarPendientes()
+    override suspend fun ultimaMarcaValida(usuarioId: String) = marcas.ultimaNoRechazada(usuarioId)?.tipo
+    override suspend fun ultimoHash(usuarioId: String) = marcas.ultimoHash(usuarioId) ?: "GENESIS"
+    override fun historial(usuarioId: String): Flow<List<MarcaEntity>> = marcas.historial(usuarioId)
+    override fun marcasDeFaena(faenaId: String): Flow<List<MarcaEntity>> = marcas.marcasDeFaena(faenaId)
+    override fun visaciones(): Flow<List<VisacionEntity>> = marcas.visaciones()
+    override fun contarPendientes(): Flow<Int> = marcas.contarPendientes()
 
     /** Guarda marca, lecturas BLE y eventos de auditoría en una sola transacción. */
-    suspend fun guardar(m: MarcaEntity, lecturas: List<LecturaBle>, v: Veredicto, ahoraMs: Long) {
+    override suspend fun guardar(m: MarcaEntity, lecturas: List<LecturaBle>, v: Veredicto, ahoraMs: Long) {
         db.withTransaction {
             marcas.insertMarca(m)
             marcas.insertLecturas(lecturas.map { LecturaBleEntity(marcaId = m.id, uuid = it.uuid, rssiPromedio = it.rssiPromedio, muestras = it.muestras) })
@@ -54,12 +125,16 @@ class AttendanceRepository @Inject constructor(
         }
     }
 
-    suspend fun visar(marcaId: String, supervisorId: String, aprobada: Boolean, ahoraMs: Long) =
+    override suspend fun visar(marcaId: String, supervisorId: String, aprobada: Boolean, ahoraMs: Long) =
         marcas.insertVisacion(VisacionEntity(marcaId, supervisorId, aprobada, ahoraMs))
+
+    override suspend fun marcaPorId(id: String) = marcas.marcaPorId(id)
+    override suspend fun visacionPorMarca(marcaId: String) = marcas.visacionPorMarca(marcaId)
+    override fun todasLasMarcas(): Flow<List<MarcaEntity>> = marcas.todasLasMarcas()
 
     // ---------- Sincronización ----------
     /** Envía marcas pendientes. Lanza excepción si no hay red (el Worker reintenta). */
-    suspend fun sincronizarMarcas() {
+    override suspend fun sincronizarMarcas() {
         val pend = marcas.pendientes()
         if (pend.isEmpty()) return
         val lecturas = marcas.lecturasDe(pend.map { it.id }).groupBy { it.marcaId }
@@ -77,9 +152,9 @@ class AttendanceRepository @Inject constructor(
         if (error.isNotEmpty()) marcas.actualizarSync(error, SyncEstado.ERROR)
     }
 
-    suspend fun sincronizarConfiguracion() = aplicarConfiguracion(api.configuracion(null))
+    override suspend fun sincronizarConfiguracion() = aplicarConfiguracion(api.configuracion(null))
 
-    suspend fun aplicarConfiguracion(c: ConfiguracionDto) {
+    override suspend fun aplicarConfiguracion(c: ConfiguracionDto) {
         db.withTransaction {
             config.upsertFaenas(c.faenas.map {
                 FaenaEntity(it.id, it.nombre, TipoPerimetro.valueOf(it.tipoPerimetro), it.centroLat, it.centroLon, it.radioM,
@@ -93,7 +168,7 @@ class AttendanceRepository @Inject constructor(
 
     // ---------- Datos sintéticos (MVP académico) ----------
     /** Carga assets/seed.json la primera vez, para operar sin backend. */
-    suspend fun cargarSemillaSiVacio() {
+    override suspend fun cargarSemillaSiVacio() {
         if (config.contarFaenas() > 0) return
         val seed = context.assets.open("seed.json").bufferedReader().use { json.decodeFromString<SeedDto>(it.readText()) }
         aplicarConfiguracion(ConfiguracionDto(seed.faenas, seed.frentes, seed.beacons, seed.usuarios))
@@ -101,8 +176,72 @@ class AttendanceRepository @Inject constructor(
         marcas.insertMarcas(seed.marcas.map {
             MarcaEntity(
                 it.id, it.usuarioId, faenaDe[it.usuarioId].orEmpty(), TipoMarca.valueOf(it.tipo), it.lat, it.lon, it.accuracy,
-                it.timestampUtc, 0L, EstadoMarca.valueOf(it.estado), it.motivo, SyncEstado.valueOf(it.syncEstado), "", "",
+                it.timestampUtc, 0L, EstadoMarca.valueOf(it.estado), it.motivo, SyncEstado.valueOf(it.syncEstado), "", "", 
             )
         })
     }
+
+    // ---------- Horas extras ----------
+
+    override suspend fun solicitarHoraExtra(
+        usuarioId: String,
+        marcaId: String?,
+        fecha: Long,
+        horas: Double,
+        motivo: String
+    ): HoraExtraEntity {
+        val id = UUID.randomUUID().toString()
+        val h = HoraExtraEntity(
+            id = id,
+            usuarioId = usuarioId,
+            marcaId = marcaId,
+            fecha = fecha,
+            horas = horas,
+            motivo = motivo,
+            estado = EstadoHoraExtra.PENDIENTE,
+            supervisorId = null,
+            timestampResolucion = null
+        )
+        db.horaExtraDao().insertarHoraExtra(h)
+        return h
+    }
+
+    override suspend fun horasExtraDeUsuario(usuarioId: String): List<HoraExtraEntity> =
+        db.horaExtraDao().horasExtraDeUsuario(usuarioId)
+
+    override suspend fun horasExtraDeUsuarios(usuarioIds: List<String>): List<HoraExtraEntity> =
+        if (usuarioIds.isEmpty()) emptyList() else db.horaExtraDao().horasExtraDeUsuarios(usuarioIds)
+
+    override suspend fun horasExtraPendientes(): List<HoraExtraEntity> =
+        db.horaExtraDao().horasExtraPorEstado(EstadoHoraExtra.PENDIENTE)
+
+    override suspend fun aprobarRechazarHoraExtra(
+        id: String,
+        supervisorId: String,
+        aprobada: Boolean
+    ) {
+        val h = db.horaExtraDao().horaExtraPorId(id) ?: return
+        val ahora = System.currentTimeMillis()
+        val actualizada = h.copy(
+            estado = if (aprobada) EstadoHoraExtra.APROBADA else EstadoHoraExtra.RECHAZADA,
+            supervisorId = supervisorId,
+            timestampResolucion = ahora
+        )
+        db.horaExtraDao().actualizarHoraExtra(actualizada)
+    }
+
+    override suspend fun horasExtraPorRango(desde: Long, hasta: Long): List<HoraExtraEntity> =
+        db.horaExtraDao().horasExtraPorRango(desde, hasta)
+
+    /** Resumen de horas extra de un usuario (cantidad y total de horas por estado). */
+    override suspend fun resumenHorasExtraUsuario(usuarioId: String): List<ResumenHoraExtraEstado> =
+        db.horaExtraDao().resumenHorasExtraUsuario(usuarioId)
+
+    /** Últimas 10 solicitudes de horas extra de un usuario. */
+    override suspend fun ultimasHorasExtraUsuario(usuarioId: String): List<HoraExtraEntity> =
+        db.horaExtraDao().ultimasHorasExtraUsuario(usuarioId)
+
+    /** Todas las horas extra registradas (para supervisión del capataz). */
+    override suspend fun todasLasHorasExtra(): List<HoraExtraEntity> =
+        db.horaExtraDao().todasLasHorasExtra()
 }

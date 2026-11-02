@@ -6,6 +6,7 @@ enum class EstadoMarca { VALIDA, SOSPECHOSA, RECHAZADA }
 enum class SyncEstado { PENDIENTE, ENVIADA, ERROR }
 enum class Severidad { BLOQUEANTE, ADVERTENCIA, INFO }
 enum class TipoPerimetro { CIRCULO, POLIGONO }
+enum class EstadoHoraExtra { PENDIENTE, APROBADA, RECHAZADA }
 
 data class LatLon(val lat: Double, val lon: Double)
 
