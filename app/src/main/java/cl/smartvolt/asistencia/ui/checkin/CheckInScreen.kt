@@ -9,6 +9,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -57,6 +59,8 @@ class CheckInViewModel @Inject constructor(
                 .onFailure { _ui.value = CheckInUi(error = it.message ?: "Error inesperado") }
         }
     }
+
+    fun cerrarSesion() = session.cerrarSesion()
 }
 
 private fun permisosCriticos(): Array<String> = buildList {
@@ -80,7 +84,19 @@ fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
     LaunchedEffect(Unit) { if (sinPermisos) launcher.launch(permisosCriticos()) }
 
     val nav = LocalNavController.current
-    Scaffold(topBar = { TopAppBar(title = { Text("Marcar asistencia · ${vm.usuarioId}") }) }) { pad ->
+    Scaffold(topBar = {
+        TopAppBar(
+            title = { Text("Marcar asistencia · ${vm.usuarioId}") },
+            actions = {
+                IconButton(onClick = {
+                    vm.cerrarSesion()
+                    nav.navigate("login") { popUpTo(nav.graph.id) { inclusive = true } }
+                }) {
+                    Icon(Icons.Default.Logout, contentDescription = "Cerrar sesión")
+                }
+            }
+        )
+    }) { pad ->
         Column(Modifier.padding(pad).padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (sinPermisos) {
                 Card { Column(Modifier.padding(16.dp)) {
@@ -103,6 +119,19 @@ fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Mis horas extra")
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { nav.navigate("calendario") },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Mi historial") }
+                OutlinedButton(
+                    onClick = { nav.navigate("mapa") },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Ver mapa") }
             }
 
             if (BuildConfig.USE_FAKE_SENSORS) {

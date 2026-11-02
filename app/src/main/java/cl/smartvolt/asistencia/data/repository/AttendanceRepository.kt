@@ -20,6 +20,8 @@ import javax.inject.Singleton
  */
 interface AttendanceRepository {
     suspend fun usuario(id: String): UsuarioEntity? = TODO("No implementado en este doble de prueba")
+    suspend fun usuariosDeFaena(faenaId: String): List<UsuarioEntity> = TODO("No implementado en este doble de prueba")
+    suspend fun faena(id: String): FaenaEntity? = TODO("No implementado en este doble de prueba")
     suspend fun perimetro(faenaId: String): Perimetro? = TODO("No implementado en este doble de prueba")
     suspend fun beacons(faenaId: String): List<BeaconAutorizado> = TODO("No implementado en este doble de prueba")
     suspend fun ultimaMarcaValida(usuarioId: String): TipoMarca? = TODO("No implementado en este doble de prueba")
@@ -56,6 +58,9 @@ interface AttendanceRepository {
     suspend fun horasExtraDeUsuario(usuarioId: String): List<HoraExtraEntity> =
         TODO("No implementado en este doble de prueba")
 
+    suspend fun horasExtraDeUsuarios(usuarioIds: List<String>): List<HoraExtraEntity> =
+        TODO("No implementado en este doble de prueba")
+
     suspend fun horasExtraPendientes(): List<HoraExtraEntity> =
         TODO("No implementado en este doble de prueba")
 
@@ -87,6 +92,10 @@ class RoomAttendanceRepository @Inject constructor(
 
     // ---------- Lectura local (fuente de verdad: Room) ----------
     override suspend fun usuario(id: String) = config.usuario(id)
+
+    override suspend fun usuariosDeFaena(faenaId: String) = config.usuariosDeFaena(faenaId)
+
+    override suspend fun faena(id: String) = config.faena(id)
 
     override suspend fun perimetro(faenaId: String): Perimetro? {
         val f = config.faena(faenaId) ?: return null
@@ -200,6 +209,9 @@ class RoomAttendanceRepository @Inject constructor(
     override suspend fun horasExtraDeUsuario(usuarioId: String): List<HoraExtraEntity> =
         db.horaExtraDao().horasExtraDeUsuario(usuarioId)
 
+    override suspend fun horasExtraDeUsuarios(usuarioIds: List<String>): List<HoraExtraEntity> =
+        if (usuarioIds.isEmpty()) emptyList() else db.horaExtraDao().horasExtraDeUsuarios(usuarioIds)
+
     override suspend fun horasExtraPendientes(): List<HoraExtraEntity> =
         db.horaExtraDao().horasExtraPorEstado(EstadoHoraExtra.PENDIENTE)
 
@@ -231,5 +243,5 @@ class RoomAttendanceRepository @Inject constructor(
 
     /** Todas las horas extra registradas (para supervisión del capataz). */
     override suspend fun todasLasHorasExtra(): List<HoraExtraEntity> =
-        db.horaExtraDao().horasExtraPorRango(0, Long.MAX_VALUE)
+        db.horaExtraDao().todasLasHorasExtra()
 }

@@ -65,7 +65,7 @@ data class VisacionEntity(
 
 @Entity(
     tableName = "horas_extra",
-    indices = [Index("usuarioId"), Index("estado")],
+    indices = [Index("usuarioId"), Index("estado"), Index("marcaId")],
     foreignKeys = [ForeignKey(entity = MarcaEntity::class, parentColumns = ["id"], childColumns = ["marcaId"], onDelete = ForeignKey.CASCADE)]
 )
 data class HoraExtraEntity(

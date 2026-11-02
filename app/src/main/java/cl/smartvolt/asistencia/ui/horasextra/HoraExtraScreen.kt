@@ -103,6 +103,10 @@ fun HoraExtraScreen(
             if (ui.exito) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text("Solicitud enviada correctamente", color = Ok, style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(onClick = onNavUp, modifier = Modifier.fillMaxWidth()) {
+                    Text("Volver a mis horas extra")
+                }
             }
         }
     }

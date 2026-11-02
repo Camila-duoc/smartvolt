@@ -6,40 +6,69 @@
     <title>OpenStreetMap - SmartVolt</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <style>
-        #map { height: 100vh; width: 100vw; }
-        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100vw; background: #e8eef5; }
+        body { margin: 0; padding: 0; font-family: sans-serif; }
+        #aviso {
+            position: absolute; z-index: 1000; left: 8px; right: 8px; top: 8px;
+            background: rgba(255,255,255,0.92); padding: 8px 10px; border-radius: 6px;
+            font-size: 12px; color: #1F3864; display: none;
+        }
     </style>
 </head>
 <body>
 <div id="map"></div>
+<div id="aviso">Sin conexión: no se pudieron cargar las teselas de OpenStreetMap.</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
     var map = null;
     var marker = null;
     var circle = null;
+    var sinConexion = false;
 
-    function initMap(lat, lon, zoom) {
+    function initMap(lat, lon, zoom, radio, titulo) {
+        if (map !== null) {
+            map.remove();
+            map = null;
+        }
+        if (typeof L === 'undefined') {
+            document.getElementById('aviso').style.display = 'block';
+            return;
+        }
+        var r = (typeof radio === 'number' && radio > 0) ? radio : 100;
+        var nombre = titulo || 'Faena';
+
         map = L.map('map').setView([lat, lon], zoom);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        var capa = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        });
+        capa.on('tileerror', function () {
+            if (!sinConexion) {
+                sinConexion = true;
+                document.getElementById('aviso').style.display = 'block';
+            }
+        });
+        capa.addTo(map);
 
         marker = L.marker([lat, lon]).addTo(map);
-        marker.bindPopup("Ubicación de la faena").openPopup();
+        marker.bindPopup(nombre).openPopup();
 
         circle = L.circle([lat, lon], {
-            color: 'blue',
-            fillColor: '#3388ff',
+            color: '#1F3864',
+            fillColor: '#2E75B6',
             fillOpacity: 0.2,
-            radius: 100 // metros, ajustable
+            radius: r
         }).addTo(map);
 
-        map.on('click', function(e) {
-            marker.setLatLng(e.latlng).update();
-            circle.setLatLng(e.latlng).update();
-            marker.bindPopup("Lat: " + e.latlng.lat.toFixed(6) + "<br>Lon: " + e.latlng.lng.toFixed(6)).openPopup();
+        map.on('click', function (e) {
+            marker.setLatLng(e.latlng);
+            circle.setLatLng(e.latlng);
+            marker.bindPopup(
+                'Lat: ' + e.latlng.lat.toFixed(6) +
+                '<br>Lon: ' + e.latlng.lng.toFixed(6) +
+                '<br>Radio faena: ' + r + ' m'
+            ).openPopup();
         });
     }
 </script>

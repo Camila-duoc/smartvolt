@@ -59,16 +59,8 @@ fun AppNav() {
             composable("calendario") {
                 CalendarioScreen(onNavUp = { nav.popBackStack() })
             }
-            composable(
-                "mapa/{lat}/{lon}",
-                arguments = listOf(
-                    navArgument("lat") { type = androidx.navigation.NavType.FloatType },
-                    navArgument("lon") { type = androidx.navigation.NavType.FloatType }
-                )
-            ) { backStackEntry ->
-                val lat = backStackEntry.arguments?.getFloat("lat") ?: -33.4180f
-                val lon = backStackEntry.arguments?.getFloat("lon") ?: -70.6050f
-                MapaScreen(lat = lat.toDouble(), lon = lon.toDouble(), onNavUp = { nav.popBackStack() })
+            composable("mapa") {
+                MapaScreen(onNavUp = { nav.popBackStack() })
             }
             composable(
                 "detalle-visacion/{marcaId}",

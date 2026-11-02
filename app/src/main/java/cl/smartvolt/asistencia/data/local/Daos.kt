@@ -24,6 +24,7 @@ interface ConfigDao {
     @Query("SELECT * FROM usuarios WHERE id = :id") suspend fun usuario(id: String): UsuarioEntity?
     @Query("SELECT * FROM faenas WHERE id = :id") suspend fun faena(id: String): FaenaEntity?
     @Query("SELECT * FROM beacons WHERE faenaId = :faenaId") suspend fun beacons(faenaId: String): List<BeaconEntity>
+    @Query("SELECT * FROM usuarios WHERE faenaId = :faenaId") suspend fun usuariosDeFaena(faenaId: String): List<UsuarioEntity>
     @Query("SELECT COUNT(*) FROM faenas") suspend fun contarFaenas(): Int
 }
 
@@ -97,6 +98,12 @@ interface HoraExtraDao {
     @Query("SELECT * FROM horas_extra WHERE fecha >= :desde AND fecha <= :hasta ORDER BY fecha DESC")
     suspend fun horasExtraPorRango(desde: Long, hasta: Long): List<HoraExtraEntity>
 
+    @Query("SELECT * FROM horas_extra WHERE usuarioId IN (:ids) ORDER BY fecha DESC")
+    suspend fun horasExtraDeUsuarios(ids: List<String>): List<HoraExtraEntity>
+
+    @Query("SELECT * FROM horas_extra ORDER BY fecha DESC")
+    suspend fun todasLasHorasExtra(): List<HoraExtraEntity>
+
     /** Horas extras de un usuario agrupadas por estado para el resumen del operario. */
     @Query("SELECT estado, COUNT(*) as cantidad, SUM(horas) as totalHoras FROM horas_extra WHERE usuarioId = :u GROUP BY estado")
     suspend fun resumenHorasExtraUsuario(u: String): List<ResumenHoraExtraEstado>
@@ -137,6 +144,14 @@ val MIGRACION_1_2: Migration = object : Migration(1, 2) {
         )
         database.execSQL("CREATE INDEX IF NOT EXISTS index_horas_extra_usuarioId ON horas_extra (usuarioId)")
         database.execSQL("CREATE INDEX IF NOT EXISTS index_horas_extra_estado ON horas_extra (estado)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_horas_extra_marcaId ON horas_extra (marcaId)")
+    }
+}
+
+/** Migración de la versión 2 a la 3: índice para la FK marcaId de horas_extra. */
+val MIGRACION_2_3: Migration = object : Migration(2, 3) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_horas_extra_marcaId ON horas_extra (marcaId)")
     }
 }
 
@@ -144,7 +159,7 @@ val MIGRACION_1_2: Migration = object : Migration(1, 2) {
     entities = [UsuarioEntity::class, FaenaEntity::class, FrenteEntity::class, BeaconEntity::class,
         MarcaEntity::class, LecturaBleEntity::class, EventoAntifraudeEntity::class, VisacionEntity::class,
         HoraExtraEntity::class],
-    version = 2, exportSchema = false,
+    version = 3, exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun configDao(): ConfigDao
@@ -157,7 +172,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(context, AppDatabase::class.java, "smartvolt.db")
-                    .addMigrations(MIGRACION_1_2)
+                    .addMigrations(MIGRACION_1_2, MIGRACION_2_3)
                     .build()
                     .also { INSTANCE = it }
             }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.smartvolt.asistencia.data.local.HoraExtraEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
+import cl.smartvolt.asistencia.domain.model.Rol
 import cl.smartvolt.asistencia.domain.usecase.ResolverHoraExtraUseCase
 import cl.smartvolt.asistencia.domain.usecase.SolicitarHoraExtraUseCase
 import cl.smartvolt.asistencia.ui.login.SessionState
@@ -15,9 +16,10 @@ import javax.inject.Inject
 
 data class HoraExtraUi(
     val solicitudes: List<HoraExtraEntity> = emptyList(),
+    val esSupervisor: Boolean = false,
     val cargando: Boolean = false,
     val error: String? = null,
-    val exito: Boolean = false
+    val exito: Boolean = false,
 )
 
 @HiltViewModel
@@ -31,12 +33,32 @@ class HoraExtraViewModel @Inject constructor(
     private val _ui = MutableStateFlow(HoraExtraUi())
     val ui: StateFlow<HoraExtraUi> = _ui
 
-    /** Para el capataz: carga todas las solicitudes de horas extra del equipo. */
+    /**
+     * Operario: sus propias solicitudes.
+     * Capataz: solicitudes de los usuarios de su faena.
+     * Admin: todas las solicitudes.
+     */
     fun cargarSolicitudes() = viewModelScope.launch {
         _ui.value = _ui.value.copy(cargando = true, error = null)
+        val usuario = session.usuario.value
+        if (usuario == null) {
+            _ui.value = _ui.value.copy(cargando = false, error = "No hay sesión activa")
+            return@launch
+        }
         try {
-            val lista = repo.todasLasHorasExtra().sortedByDescending { it.fecha }
-            _ui.value = _ui.value.copy(solicitudes = lista, cargando = false)
+            val lista = when (usuario.rol) {
+                Rol.ADMIN -> repo.todasLasHorasExtra()
+                Rol.CAPATAZ -> {
+                    val ids = repo.usuariosDeFaena(usuario.faenaId).map { it.id }
+                    repo.horasExtraDeUsuarios(ids)
+                }
+                Rol.OPERARIO -> repo.horasExtraDeUsuario(usuario.id)
+            }.sortedByDescending { it.fecha }
+            _ui.value = _ui.value.copy(
+                solicitudes = lista,
+                esSupervisor = usuario.rol != Rol.OPERARIO,
+                cargando = false,
+            )
         } catch (e: Exception) {
             _ui.value = _ui.value.copy(cargando = false, error = e.message ?: "Error al cargar horas extra")
         }
@@ -68,8 +90,8 @@ class HoraExtraViewModel @Inject constructor(
         try {
             val supervisorId = session.usuario.value?.id.orEmpty()
             resolverUseCase(id, supervisorId, aprobada)
-            val lista = repo.todasLasHorasExtra().sortedByDescending { it.fecha }
-            _ui.value = _ui.value.copy(solicitudes = lista, cargando = false, exito = true)
+            _ui.value = _ui.value.copy(cargando = false, exito = true)
+            cargarSolicitudes()
         } catch (e: Exception) {
             _ui.value = _ui.value.copy(cargando = false, error = e.message ?: "Error al resolver la solicitud")
         }

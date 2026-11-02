@@ -23,6 +23,10 @@ import javax.inject.Singleton
 @Singleton
 class SessionState @Inject constructor() {
     val usuario = MutableStateFlow<UsuarioEntity?>(null)
+
+    fun cerrarSesion() {
+        usuario.value = null
+    }
 }
 
 @HiltViewModel

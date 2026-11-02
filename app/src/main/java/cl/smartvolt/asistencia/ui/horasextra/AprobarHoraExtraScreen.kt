@@ -33,6 +33,7 @@ fun AprobarHoraExtraScreen(
     val pendientes = ui.solicitudes.filter { it.estado == EstadoHoraExtra.PENDIENTE }
     val aprobadas = ui.solicitudes.filter { it.estado == EstadoHoraExtra.APROBADA }
     val rechazadas = ui.solicitudes.filter { it.estado == EstadoHoraExtra.RECHAZADA }
+    val resueltas = ui.solicitudes.filter { it.estado != EstadoHoraExtra.PENDIENTE }
 
     val totalPendientesHoras = pendientes.sumOf { it.horas }
     val totalAprobadasHoras = aprobadas.sumOf { it.horas }
@@ -105,6 +106,49 @@ fun AprobarHoraExtraScreen(
                         ui.error?.let { error ->
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Historial de resoluciones", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "${resueltas.size} solicitud(es) ya revisadas",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (resueltas.isEmpty()) {
+                item {
+                    Text(
+                        "Todavía no has aprobado ni rechazado solicitudes",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+            items(items = resueltas, key = { "r-${it.id}" }) { h ->
+                val color = if (h.estado == EstadoHoraExtra.APROBADA) Ok else Bad
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Usuario: ${h.usuarioId}", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                text = h.estado.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = color,
+                            )
+                        }
+                        Text("${h.horas} h · ${h.motivo}", style = MaterialTheme.typography.bodySmall)
+                        h.supervisorId?.let {
+                            Text("Revisado por: $it", style = MaterialTheme.typography.bodySmall)
+                        }
+                        h.timestampResolucion?.let {
+                            val txt = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(it))
+                            Text("Fecha de resolución: $txt", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }

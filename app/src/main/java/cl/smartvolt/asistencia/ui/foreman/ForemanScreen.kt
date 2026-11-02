@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,6 +49,8 @@ class ForemanViewModel @Inject constructor(
     fun visar(marcaId: String, aprobada: Boolean) = viewModelScope.launch {
         repo.visar(marcaId, supervisorId, aprobada, System.currentTimeMillis())
     }
+
+    fun cerrarSesion() = session.cerrarSesion()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,8 +69,14 @@ fun ForemanScreen(vm: ForemanViewModel = hiltViewModel()) {
                     IconButton(onClick = { nav.navigate("calendario") }) {
                         Icon(Icons.Default.CalendarMonth, contentDescription = "Calendario")
                     }
-                    IconButton(onClick = { nav.navigate("mapa/-33.4180/-70.6050") }) {
+                    IconButton(onClick = { nav.navigate("mapa") }) {
                         Icon(Icons.Default.Map, contentDescription = "Mapa")
+                    }
+                    IconButton(onClick = {
+                        vm.cerrarSesion()
+                        nav.navigate("login") { popUpTo(nav.graph.id) { inclusive = true } }
+                    }) {
+                        Icon(Icons.Default.Logout, contentDescription = "Cerrar sesión")
                     }
                 }
             )
