@@ -6,6 +6,7 @@ import cl.smartvolt.asistencia.domain.model.EstadoHoraExtra
 import cl.smartvolt.asistencia.domain.usecase.SolicitarHoraExtraUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -74,5 +75,42 @@ class SolicitarHoraExtraUseCaseTest {
         assertEquals("he-1", id)
         assertEquals("Cierre de turno", repo.ultima?.motivo)
         assertEquals(2.5, repo.ultima?.horas ?: 0.0, 0.001)
+    }
+
+    @Test
+    fun validar_horas_texto_acepta_decimales_punto_y_coma() {
+        assertNull(SolicitarHoraExtraUseCase.validarHorasTexto("1.5"))
+        assertNull(SolicitarHoraExtraUseCase.validarHorasTexto("1,5"))
+        assertNull(SolicitarHoraExtraUseCase.validarHorasTexto(SolicitarHoraExtraUseCase.MAX_HORAS_TEXTO))
+    }
+
+    @Test
+    fun validar_horas_texto_rechaza_vacio_no_numerico_y_fuera_de_rango() {
+        assertEquals("Ingresa las horas solicitadas", SolicitarHoraExtraUseCase.validarHorasTexto("  "))
+        assertEquals("Usa un número válido (ej. 1.5)", SolicitarHoraExtraUseCase.validarHorasTexto("abc"))
+        assertEquals("Las horas deben ser mayores a 0", SolicitarHoraExtraUseCase.validarHorasTexto("0"))
+        assertEquals(
+            "Máximo ${SolicitarHoraExtraUseCase.MAX_HORAS_TEXTO} h por solicitud",
+            SolicitarHoraExtraUseCase.validarHorasTexto("13"),
+        )
+    }
+
+    @Test
+    fun validar_motivo_cuenta_el_texto_recortado() {
+        assertEquals("El motivo es obligatorio", SolicitarHoraExtraUseCase.validarMotivo("   "))
+        assertEquals(
+            "Mínimo ${SolicitarHoraExtraUseCase.MIN_MOTIVO} caracteres (llevas 6)",
+            SolicitarHoraExtraUseCase.validarMotivo("Cierre"),
+        )
+        assertNull(SolicitarHoraExtraUseCase.validarMotivo("  Cierre de turno  "))
+    }
+
+    @Test
+    fun el_use_case_usa_las_mismas_reglas_que_la_ui() = runTest {
+        val error = runCatching {
+            useCase("OP-0001", null, 1000L, 0.0, "Motivo suficiente")
+        }.exceptionOrNull()
+
+        assertEquals("Las horas deben ser mayores a 0", error?.message)
     }
 }

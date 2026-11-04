@@ -10,14 +10,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -28,13 +34,6 @@ import cl.smartvolt.asistencia.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
-private val MAX_HORAS_TXT =
-    if (SolicitarHoraExtraUseCase.MAX_HORAS % 1.0 == 0.0) {
-        SolicitarHoraExtraUseCase.MAX_HORAS.toInt().toString()
-    } else {
-        SolicitarHoraExtraUseCase.MAX_HORAS.toString()
-    }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HoraExtraScreen(
@@ -42,33 +41,22 @@ fun HoraExtraScreen(
     vm: HoraExtraViewModel = hiltViewModel(),
 ) {
     val ui by vm.ui.collectAsState()
-    var horas by remember { mutableStateOf("") }
-    var motivo by remember { mutableStateOf("") }
-    var diasAtras by remember { mutableStateOf(0f) }
-    var tocadoHoras by remember { mutableStateOf(false) }
-    var tocadoMotivo by remember { mutableStateOf(false) }
+    var horas by rememberSaveable { mutableStateOf("") }
+    var motivo by rememberSaveable { mutableStateOf("") }
+    var diasAtras by rememberSaveable { mutableStateOf(0f) }
+    var tocadoHoras by rememberSaveable { mutableStateOf(false) }
+    var tocadoMotivo by rememberSaveable { mutableStateOf(false) }
 
     val fechaSeleccionada = remember(diasAtras) {
         System.currentTimeMillis() - (diasAtras * 86_400_000L).toLong()
     }
     val fechaTxt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(fechaSeleccionada))
 
+    // Las reglas viven en el caso de uso; la pantalla solo las muestra por campo.
     val horasNum = horas.replace(',', '.').toDoubleOrNull()
-    val horasError = when {
-        horas.isBlank() -> "Ingresa las horas solicitadas"
-        horasNum == null -> "Usa un número válido (ej. 1.5)"
-        horasNum <= 0 -> "Las horas deben ser mayores a 0"
-        horasNum > SolicitarHoraExtraUseCase.MAX_HORAS ->
-            "Máximo $MAX_HORAS_TXT h por solicitud"
-        else -> null
-    }
+    val horasError = SolicitarHoraExtraUseCase.validarHorasTexto(horas)
     val motivoLimpio = motivo.trim()
-    val motivoError = when {
-        motivoLimpio.isEmpty() -> "El motivo es obligatorio"
-        motivoLimpio.length < SolicitarHoraExtraUseCase.MIN_MOTIVO ->
-            "Mínimo ${SolicitarHoraExtraUseCase.MIN_MOTIVO} caracteres (llevas ${motivoLimpio.length})"
-        else -> null
-    }
+    val motivoError = SolicitarHoraExtraUseCase.validarMotivo(motivo)
     val formularioValido = horasError == null && motivoError == null
     val mostrarHorasError = tocadoHoras && horasError != null
     val mostrarMotivoError = tocadoMotivo && motivoError != null
@@ -82,7 +70,7 @@ fun HoraExtraScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Solicitar horas extra") },
-                navigationIcon = { IconButton(onClick = onNavUp) { Icon(Icons.Default.ArrowBack, contentDescription = "Atrás") } }
+                navigationIcon = { IconButton(onClick = onNavUp) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás") } }
             )
         }
     ) { padding ->
@@ -91,7 +79,7 @@ fun HoraExtraScreen(
         ) {
             Text("Solicitud de horas extra", style = MaterialTheme.typography.headlineSmall)
             Text(
-                "Tope: $MAX_HORAS_TXT h · motivo mínimo ${SolicitarHoraExtraUseCase.MIN_MOTIVO} caracteres",
+                "Tope: ${SolicitarHoraExtraUseCase.MAX_HORAS_TEXTO} h · motivo mínimo ${SolicitarHoraExtraUseCase.MIN_MOTIVO} caracteres",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -104,6 +92,12 @@ fun HoraExtraScreen(
                     tocadoHoras = true
                 },
                 label = { Text("Horas solicitadas") },
+                leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) },
+                trailingIcon = if (mostrarHorasError) {
+                    { Icon(Icons.Default.ErrorOutline, contentDescription = "Error en las horas") }
+                } else {
+                    null
+                },
                 isError = mostrarHorasError,
                 supportingText = horasSupport,
                 keyboardOptions = KeyboardOptions(
@@ -122,6 +116,12 @@ fun HoraExtraScreen(
                     tocadoMotivo = true
                 },
                 label = { Text("Motivo / justificación") },
+                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null) },
+                trailingIcon = if (mostrarMotivoError) {
+                    { Icon(Icons.Default.ErrorOutline, contentDescription = "Error en el motivo") }
+                } else {
+                    null
+                },
                 isError = mostrarMotivoError,
                 supportingText = motivoSupport,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -163,12 +163,23 @@ fun HoraExtraScreen(
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically(),
             ) {
-                Text(
-                    text = ui.error.orEmpty(),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 12.dp),
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Default.ErrorOutline,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = ui.error.orEmpty(),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
 
             AnimatedVisibility(
@@ -178,7 +189,20 @@ fun HoraExtraScreen(
             ) {
                 Column {
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Solicitud enviada correctamente", color = Ok, style = MaterialTheme.typography.bodyMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Ok,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "Solicitud enviada correctamente",
+                            color = Ok,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedButton(onClick = onNavUp, modifier = Modifier.fillMaxWidth()) {
                         Text("Volver a mis horas extra")

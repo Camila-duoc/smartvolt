@@ -4,6 +4,8 @@ Aplicación Android de control de asistencia en faena, escrita en **Kotlin + Jet
 
 Todos los datos son **ficticios**, pensados para una demo académica sin hardware real.
 
+> Documentación detallada del proyecto y de cada archivo: [DOCUMENTACION.md](DOCUMENTACION.md).
+
 ## Stack
 
 - Kotlin 2.0.20, Jetpack Compose (BOM 2024.09.00) y Material 3
@@ -74,7 +76,7 @@ La semilla (`assets/seed.json`) incluye 4 faenas, 11 frentes, 11 beacons, 27 usu
 - Tema **Material 3** con tipografía, formas y **modo oscuro** (sigue el ajuste del sistema).
 - **Transiciones animadas** entre pantallas y aparición animada del resultado de la marca.
 - **Notificaciones locales**: marca sospechosa pendiente de visación y sincronización completada (canales `smartvolt_alertas` y `smartvolt_sync`).
-- **Formularios validados** en login y horas extra, con mensajes de error junto a cada campo mientras se escribe.
+- **Formularios validados** en login y horas extra, con íconos y mensajes de error junto a cada campo mientras se escribe. Las reglas viven en `ValidarLoginUseCase` y `SolicitarHoraExtraUseCase`, no en la pantalla.
 
 ## Sincronización
 
@@ -95,7 +97,7 @@ app/src/main/java/cl/smartvolt/asistencia/
 │   ├── antifraude/   # Rules.kt, RuleEngine.kt
 │   ├── geo/          # GeoUtils.kt
 │   ├── model/        # Models.kt
-│   └── usecase/      # RegistrarMarca, HashMarca, SolicitarHoraExtra, ExportarMarcasCsv, ExportarReportePdf
+│   └── usecase/      # RegistrarMarca, HashMarca, SolicitarHoraExtra, ValidarLogin, ExportarMarcasCsv, ExportarReportePdf
 ├── sensors/          # GPS/BLE reales y simulados
 ├── sync/             # SyncWorker y SyncScheduler
 └── ui/               # login, checkin, foreman, visacion, admin, horasextra, calendario, mapa, navigation, theme

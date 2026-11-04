@@ -5,8 +5,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -19,6 +24,7 @@ import androidx.lifecycle.viewModelScope
 import cl.smartvolt.asistencia.data.local.UsuarioEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.domain.model.Rol
+import cl.smartvolt.asistencia.domain.usecase.ValidarLoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,59 +41,77 @@ class SessionState @Inject constructor() {
     }
 }
 
+/** Estado del formulario de login: errores por campo y error general de autenticación. */
+data class LoginUi(
+    val idError: String? = null,
+    val pinError: String? = null,
+    val errorGeneral: String? = null,
+) {
+    val formularioValido: Boolean get() = idError == null && pinError == null
+}
+
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val repo: AttendanceRepository,
     private val session: SessionState,
+    private val validarLogin: ValidarLoginUseCase,
 ) : ViewModel() {
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+    private val _ui = MutableStateFlow(LoginUi())
+    val ui: StateFlow<LoginUi> = _ui
 
     init { viewModelScope.launch { repo.cargarSemillaSiVacio() } }
 
+    /** Valida los campos con la lógica del dominio y publica los errores por campo. */
+    fun validar(id: String, pin: String) {
+        val errores = validarLogin.validar(id, pin)
+        _ui.value = _ui.value.copy(idError = errores.codigo, pinError = errores.pin)
+    }
+
     fun limpiarError() {
-        _error.value = null
+        if (_ui.value.errorGeneral != null) {
+            _ui.value = _ui.value.copy(errorGeneral = null)
+        }
     }
 
     /** DEMO: PIN fijo "1234". En una versión real, autenticar contra el backend (RF-04, RF-60). */
     fun ingresar(id: String, pin: String, onOk: (Rol) -> Unit) = viewModelScope.launch {
+        val errores = validarLogin.validar(id, pin)
+        if (!errores.valido) {
+            _ui.value = _ui.value.copy(idError = errores.codigo, pinError = errores.pin)
+            return@launch
+        }
+
         val u = repo.usuario(id.trim().uppercase())
-        if (u == null || pin != "1234") { _error.value = "Código o PIN incorrecto"; return@launch }
+        if (u == null || pin != "1234") {
+            _ui.value = _ui.value.copy(errorGeneral = "Código o PIN incorrecto")
+            return@launch
+        }
+
         session.usuario.value = u
-        _error.value = null
+        _ui.value = LoginUi()
         onOk(u.rol)
     }
 }
 
-private val FORMATO_CODIGO = Regex("^[A-Za-z]{2,3}-\\d{4}$")
-
 @Composable
 fun LoginScreen(onLogin: (Rol) -> Unit, vm: LoginViewModel = hiltViewModel()) {
-    var id by remember { mutableStateOf("OP-0001") }
-    var pin by remember { mutableStateOf("1234") }
-    var intentoEnvio by remember { mutableStateOf(false) }
-    val error by vm.error.collectAsState()
+    var id by rememberSaveable { mutableStateOf("OP-0001") }
+    var pin by rememberSaveable { mutableStateOf("1234") }
+    var intentoEnvio by rememberSaveable { mutableStateOf(false) }
+    var tocadoId by rememberSaveable { mutableStateOf(false) }
+    var tocadoPin by rememberSaveable { mutableStateOf(false) }
+    val ui by vm.ui.collectAsState()
 
-    val idError = when {
-        id.isBlank() -> "Ingresa tu código de usuario"
-        !FORMATO_CODIGO.matches(id.trim()) -> "Formato esperado: OP-0001, CAP-0001 o ADM-0001"
-        else -> null
-    }
-    val pinError = when {
-        pin.isBlank() -> "Ingresa tu PIN"
-        pin.length != 4 || pin.any { !it.isDigit() } -> "El PIN debe tener 4 dígitos"
-        else -> null
-    }
+    // La validación vive en el dominio; aquí solo se sincroniza con lo que se escribe.
+    LaunchedEffect(id, pin) { vm.validar(id, pin) }
 
-    // El error se muestra mientras se escribe, no solo al enviar.
-    val mostrarIdError = (intentoEnvio || id.isNotEmpty()) && idError != null
-    val mostrarPinError = (intentoEnvio || pin.isNotEmpty()) && pinError != null
-    val formularioValido = idError == null && pinError == null
+    val mostrarIdError = (intentoEnvio || tocadoId) && ui.idError != null
+    val mostrarPinError = (intentoEnvio || tocadoPin) && ui.pinError != null
 
     val idSupport: (@Composable () -> Unit)? =
-        if (mostrarIdError) ({ Text(idError.orEmpty()) }) else null
+        if (mostrarIdError) ({ Text(ui.idError.orEmpty()) }) else null
     val pinSupport: (@Composable () -> Unit)? =
-        if (mostrarPinError) ({ Text(pinError.orEmpty()) }) else null
+        if (mostrarPinError) ({ Text(ui.pinError.orEmpty()) }) else null
 
     Column(
         Modifier.fillMaxSize().padding(24.dp),
@@ -102,10 +126,17 @@ fun LoginScreen(onLogin: (Rol) -> Unit, vm: LoginViewModel = hiltViewModel()) {
             value = id,
             onValueChange = {
                 id = it.uppercase()
-                if (error != null) vm.limpiarError()
+                tocadoId = true
+                vm.limpiarError()
             },
             label = { Text("Código de usuario") },
             placeholder = { Text("OP-0001, CAP-0001 o ADM-0001") },
+            leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null) },
+            trailingIcon = if (mostrarIdError) {
+                { Icon(Icons.Default.ErrorOutline, contentDescription = "Error en el código") }
+            } else {
+                null
+            },
             isError = mostrarIdError,
             supportingText = idSupport,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -117,10 +148,17 @@ fun LoginScreen(onLogin: (Rol) -> Unit, vm: LoginViewModel = hiltViewModel()) {
         OutlinedTextField(
             value = pin,
             onValueChange = {
-                pin = it.filter(Char::isDigit).take(4)
-                if (error != null) vm.limpiarError()
+                pin = it.filter(Char::isDigit).take(ValidarLoginUseCase.LARGO_PIN)
+                tocadoPin = true
+                vm.limpiarError()
             },
             label = { Text("PIN") },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            trailingIcon = if (mostrarPinError) {
+                { Icon(Icons.Default.ErrorOutline, contentDescription = "Error en el PIN") }
+            } else {
+                null
+            },
             isError = mostrarPinError,
             supportingText = pinSupport,
             visualTransformation = PasswordVisualTransformation(),
@@ -133,24 +171,38 @@ fun LoginScreen(onLogin: (Rol) -> Unit, vm: LoginViewModel = hiltViewModel()) {
         )
 
         AnimatedVisibility(
-            visible = error != null,
+            visible = ui.errorGeneral != null,
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
-            Text(
-                text = error.orEmpty(),
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.bodySmall,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Default.ErrorOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = ui.errorGeneral.orEmpty(),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
 
         Spacer(Modifier.height(20.dp))
         Button(
             onClick = {
                 intentoEnvio = true
-                if (formularioValido) vm.ingresar(id, pin, onLogin)
+                tocadoId = true
+                tocadoPin = true
+                vm.ingresar(id, pin, onLogin)
             },
+            enabled = ui.formularioValido,
             modifier = Modifier.fillMaxWidth().height(56.dp),
         ) {
             Text("INGRESAR")
