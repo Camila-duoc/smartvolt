@@ -11,12 +11,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
 import javax.inject.Inject
 
-/** ViewModel del calendario: agrupa marcas por fecha según el rol del usuario. */
+/** ViewModel del calendario: agrupa marcas por día local según el rol del usuario. */
 @HiltViewModel
 class CalendarioViewModel @Inject constructor(
     private val repo: AttendanceRepository,
@@ -25,6 +26,21 @@ class CalendarioViewModel @Inject constructor(
 
     private val _ui = MutableStateFlow(CalendarioUi())
     val ui: StateFlow<CalendarioUi> = _ui
+
+    /**
+     * Carga las marcas del mes visible.
+     *
+     * Se calcula el rango [inicio del mes, inicio del mes siguiente) en la zona horaria
+     * del dispositivo para que el agrupamiento por día coincida con lo que ve el usuario.
+     * Restar 1 ms al inicio del mes siguiente hace el rango inclusivo en el último día.
+     */
+    fun cargarMes(mes: YearMonth) {
+        val zona = ZoneId.systemDefault()
+        val desde = mes.atDay(1).atStartOfDay(zona).toInstant().toEpochMilli()
+        val hasta = mes.plusMonths(1).atDay(1)
+            .atStartOfDay(zona).toInstant().toEpochMilli() - 1
+        cargarHistorial(desde, hasta)
+    }
 
     /**
      * Operario: su propio historial.
@@ -39,6 +55,7 @@ class CalendarioViewModel @Inject constructor(
             return@launch
         }
         try {
+            // Acceso según rol: cada usuario solo consulta el alcance que le corresponde.
             val base = when (usuario.rol) {
                 Rol.OPERARIO -> repo.historial(usuario.id).first()
                 Rol.CAPATAZ -> repo.marcasDeFaena(usuario.faenaId).first()
@@ -46,16 +63,19 @@ class CalendarioViewModel @Inject constructor(
             }
             val lista = base.filter { it.timestampUtc in desde..hasta }
 
-            // Agrupar por fecha (día), más reciente primero.
-            val formato = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            val porFecha = lista
-                .groupBy { formato.format(Date(it.timestampUtc)) }
+            // La clave es LocalDate (no un String) para poder compararla directamente
+            // con las celdas de la grilla y con el día seleccionado.
+            val zona = ZoneId.systemDefault()
+            val porDia = lista
+                .groupBy { Instant.ofEpochMilli(it.timestampUtc).atZone(zona).toLocalDate() }
                 .entries
-                .sortedByDescending { (_, marcas) -> marcas.maxOf { it.timestampUtc } }
-                .associate { it.key to it.value.sortedByDescending { m -> m.timestampUtc } }
+                .sortedByDescending { it.key }
+                .associate { (fecha, marcas) ->
+                    fecha to marcas.sortedByDescending { it.timestampUtc }
+                }
 
             _ui.value = _ui.value.copy(
-                marcasPorFecha = porFecha,
+                marcasPorDia = porDia,
                 rol = usuario.rol,
                 cargando = false,
             )
@@ -66,7 +86,8 @@ class CalendarioViewModel @Inject constructor(
 }
 
 data class CalendarioUi(
-    val marcasPorFecha: Map<String, List<MarcaEntity>> = emptyMap(),
+    /** Marcas agrupadas por día local. Solo contiene días con al menos una marca. */
+    val marcasPorDia: Map<LocalDate, List<MarcaEntity>> = emptyMap(),
     val rol: Rol? = null,
     val desde: Long = 0L,
     val hasta: Long = Long.MAX_VALUE,
