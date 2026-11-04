@@ -62,9 +62,9 @@ class CalendarioTest {
 
         val ui = viewModel.ui.value
         assertEquals(Rol.ADMIN, ui.rol)
-        assertEquals(3, ui.marcasPorFecha.values.sumOf { it.size })
+        assertEquals(3, ui.marcasPorDia.values.sumOf { it.size })
         // Todas las marcas del ejemplo caen el mismo día (1/1/1970)
-        assertEquals(1, ui.marcasPorFecha.size)
+        assertEquals(1, ui.marcasPorDia.size)
         assertNull(ui.error)
     }
 
@@ -76,8 +76,8 @@ class CalendarioTest {
 
         val ui = viewModel.ui.value
         assertEquals(Rol.OPERARIO, ui.rol)
-        assertEquals(2, ui.marcasPorFecha.values.sumOf { it.size })
-        assertEquals(listOf("OP-0001"), ui.marcasPorFecha.values.flatten().map { it.usuarioId }.distinct())
+        assertEquals(2, ui.marcasPorDia.values.sumOf { it.size })
+        assertEquals(listOf("OP-0001"), ui.marcasPorDia.values.flatten().map { it.usuarioId }.distinct())
     }
 
     @Test
@@ -88,7 +88,7 @@ class CalendarioTest {
 
         val ui = viewModel.ui.value
         assertEquals(Rol.CAPATAZ, ui.rol)
-        assertEquals(3, ui.marcasPorFecha.values.sumOf { it.size })
+        assertEquals(3, ui.marcasPorDia.values.sumOf { it.size })
     }
 
     @Test
@@ -97,7 +97,7 @@ class CalendarioTest {
         viewModel.cargarHistorial(0L, 100000L)
         advanceUntilIdle()
 
-        assertEquals(0, viewModel.ui.value.marcasPorFecha.size)
+        assertEquals(0, viewModel.ui.value.marcasPorDia.size)
     }
 
     @Test
@@ -106,6 +106,6 @@ class CalendarioTest {
         advanceUntilIdle()
 
         assertNotNull(viewModel.ui.value.error)
-        assertEquals(0, viewModel.ui.value.marcasPorFecha.size)
+        assertEquals(0, viewModel.ui.value.marcasPorDia.size)
     }
 }

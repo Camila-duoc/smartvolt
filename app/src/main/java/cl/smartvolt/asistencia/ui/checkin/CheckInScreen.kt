@@ -73,7 +73,15 @@ class CheckInViewModel @Inject constructor(
                     }
                     SyncScheduler.enqueue(ctx)
                 }
-                .onFailure { _ui.value = CheckInUi(error = it.message ?: "Error inesperado") }
+                .onFailure {
+                    // Mensaje entendible para el usuario final; el detalle técnico
+                    // (por ejemplo el código 17 de GMS) queda en los logs.
+                    val mensaje = when (it) {
+                        is SecurityException -> "Permiso de ubicación denegado. Actívalo en Ajustes."
+                        else -> it.message ?: "Error inesperado"
+                    }
+                    _ui.value = CheckInUi(error = mensaje)
+                }
         }
     }
 
