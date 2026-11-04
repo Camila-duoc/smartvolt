@@ -48,5 +48,7 @@ dependencies {
     implementation(libs.kotlinx.serialization)
     implementation(libs.coroutines.android); implementation(libs.coroutines.play)
     implementation(libs.play.location)
+    // Mapa (Mapbox Maps SDK + extensión Jetpack Compose), igual que en el ejemplo del profesor.
+    implementation(libs.mapbox.maps); implementation(libs.mapbox.compose)
     testImplementation(libs.junit); testImplementation(libs.coroutines.test)
 }

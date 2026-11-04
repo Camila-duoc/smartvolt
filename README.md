@@ -80,6 +80,15 @@ La semilla (`assets/seed.json`) incluye 4 faenas, 11 frentes, 11 beacons, 27 usu
 - **Notificaciones locales**: marca sospechosa pendiente de visación y sincronización completada (canales `smartvolt_alertas` y `smartvolt_sync`).
 - **Formularios validados** en login y horas extra, con íconos y mensajes de error junto a cada campo mientras se escribe. Las reglas viven en `ValidarLoginUseCase` y `SolicitarHoraExtraUseCase`, no en la pantalla.
 
+## Mapa de la faena
+
+La pantalla **Ver mapa** usa el **Mapbox Maps SDK** con la extensión **maps-compose** (la misma combinación del ejemplo `GeoMapbox` del profesor). Muestra el centro del perímetro de la faena, un marcador y una tarjeta con el radio autorizado.
+
+- Dependencias: `com.mapbox.maps:android-ndk27:11.16.2` y `com.mapbox.extension:maps-compose-ndk27:11.16.2` (declaradas en `gradle/libs.versions.toml`).
+- Repositorio Maven de Mapbox: `https://api.mapbox.com/downloads/v2/releases/maven` (en `settings.gradle.kts`).
+- Token público: `app/src/main/res/values/mapbox_access_token.xml`.
+- El mapa necesita **internet** para descargar los mosaicos; si no hay red, el resto de la app sigue funcionando.
+
 ## Sincronización
 
 `SyncScheduler` encola un `SyncWorker` (WorkManager, con restricción de red conectada y reintento exponencial) cada vez que se guarda una marca. El worker envía las marcas pendientes y luego intenta actualizar la configuración. En `demo` la API es simulada, así que las marcas pasan a ENVIADA sin backend. Al terminar, si se enviaron marcas, muestra una notificación local de sincronización completada. Para probar el modo offline, activa el modo avión, marca y vuelve a conectar.

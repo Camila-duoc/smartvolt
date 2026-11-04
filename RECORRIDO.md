@@ -204,7 +204,7 @@ Lee esto solo para entender con qué está construido. No lo memorices.
 | `ui/visacion/DetalleVisacionViewModel.kt` | Carga marca + visación. |
 | `ui/calendario/CalendarioScreen.kt` | Historial por rango. |
 | `ui/calendario/CalendarioViewModel.kt` | Agrupación por fecha según rol. |
-| `ui/mapa/MapaScreen.kt` | WebView con Leaflet/OpenStreetMap. |
+| `ui/mapa/MapaScreen.kt` | Mapa Mapbox con marcador en el centro de la faena. |
 | `ui/mapa/MapaViewModel.kt` | Centro y radio de la faena. |
 | `ui/horasextra/HoraExtraScreen.kt` | Formulario de horas extra con íconos y errores por campo. |
 | `ui/horasextra/HoraExtraViewModel.kt` | Estado y acciones de horas extra. |
@@ -232,7 +232,7 @@ Lee esto solo para entender con qué está construido. No lo memorices.
 | `app/src/main/res/values-night/themes.xml` | Tema XML oscuro. |
 | `app/src/main/res/values/strings.xml` | Nombre de la app. |
 | `app/src/main/res/xml/file_paths.xml` | Ruta `cache/exports` para compartir CSV/PDF. |
-| `app/src/main/assets/map.html` | Mapa Leaflet/OpenStreetMap. |
+| `app/src/main/assets/map.html` | Mapa Leaflet/OpenStreetMap anterior (sin uso tras migrar a Mapbox). |
 | `app/src/test/.../ExportarMarcasCsvTest.kt` | Formato y escape del CSV. |
 
 ---
@@ -275,7 +275,7 @@ Esta es la parte más útil para una defensa: casi ningún cambio toca un solo a
 | Agregar una pantalla o ruta | `ui/navigation/AppNav.kt`, nueva `Screen.kt` + `ViewModel.kt`, botón de acceso en `CheckInScreen.kt` / `ForemanScreen.kt` / `AdminScreen.kt`, `strings.xml` si hay textos nuevos. |
 | Cambiar animaciones o transiciones | `AppNav.kt` (transiciones), `CheckInScreen.kt` (resultado/carga), `AdminScreen.kt` (contadores/alertas), `HoraExtraScreen.kt` (éxito/error). |
 | Cambiar textos visibles | La pantalla correspondiente y `res/values/strings.xml`. |
-| Cambiar el mapa | `assets/map.html`, `MapaScreen.kt`, `MapaViewModel.kt`. |
+| Cambiar el mapa | `ui/mapa/MapaScreen.kt`, `ui/mapa/MapaViewModel.kt`, `res/values/mapbox_access_token.xml`. |
 
 ### Cambiar roles, login o sesión
 

@@ -1,12 +1,15 @@
 package cl.smartvolt.asistencia.ui.mapa
 
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -22,13 +25,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
-import org.json.JSONObject
+import com.mapbox.geojson.Point
+import com.mapbox.maps.MapboxExperimental
+import com.mapbox.maps.extension.compose.MapboxMap
+import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
+import com.mapbox.maps.extension.compose.annotation.Marker
+import java.util.Locale
 
 /**
- * Pantalla de mapa usando OpenStreetMap (Leaflet.js) dentro de un WebView.
- * El centro y radio se cargan desde el perímetro de la faena del usuario en Room.
+ * Pantalla de mapa de la faena usando el SDK de Mapbox (igual que el ejemplo del profesor).
+ * El centro y el radio se cargan desde el perímetro de la faena del usuario en Room.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,24 +71,42 @@ fun MapaScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.align(Alignment.Center).padding(24.dp),
                 )
-                lat != null && lon != null -> AndroidView(
-                    modifier = Modifier.fillMaxSize(),
-                    factory = { ctx ->
-                        val radio = ui.radioM
-                        val nombre = JSONObject.quote(ui.nombreFaena)
-                        WebView(ctx).apply {
-                            settings.javaScriptEnabled = true
-                            settings.domStorageEnabled = true
-                            webViewClient = object : WebViewClient() {
-                                override fun onPageFinished(view: WebView?, url: String?) {
-                                    super.onPageFinished(view, url)
-                                    view?.loadUrl("javascript:initMap($lat, $lon, 16, $radio, $nombre)")
-                                }
-                            }
-                            loadUrl("file:///android_asset/map.html")
+                lat != null && lon != null -> Box(modifier = Modifier.fillMaxSize()) {
+                    MapaFaena(lat = lat, lon = lon)
+                    Card(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                        ),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                text = ui.nombreFaena.ifBlank { "Faena" },
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                text = "Perímetro autorizado: ${ui.radioM.toInt()} m",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            Text(
+                                text = String.format(
+                                    Locale.US,
+                                    "Centro: %.5f, %.5f",
+                                    lat,
+                                    lon,
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
-                )
+                }
                 else -> Text(
                     text = "Sin ubicación disponible para esta faena",
                     style = MaterialTheme.typography.bodyMedium,
@@ -89,5 +114,25 @@ fun MapaScreen(
                 )
             }
         }
+    }
+}
+
+/** Mapa de Mapbox centrado en la faena, con un marcador en su punto central. */
+@OptIn(MapboxExperimental::class)
+@Composable
+private fun MapaFaena(lat: Double, lon: Double) {
+    val centro = Point.fromLngLat(lon, lat)
+    MapboxMap(
+        modifier = Modifier.fillMaxSize(),
+        mapViewportState = rememberMapViewportState {
+            setCameraOptions {
+                center(centro)
+                zoom(16.0)
+                pitch(0.0)
+                bearing(0.0)
+            }
+        },
+    ) {
+        Marker(point = centro)
     }
 }

@@ -262,7 +262,7 @@ smartvolt/
 | `app/src/main/AndroidManifest.xml` | Permisos (ubicación, Bluetooth, red, notificaciones), `Application`, `MainActivity`, inicialización de WorkManager y `FileProvider` para compartir CSV/PDF. |
 | `app/src/debug/AndroidManifest.xml` | Solo debug: permite tráfico HTTP claro para el backend local (`10.0.2.2:8080`). |
 | `app/src/main/assets/seed.json` | Datos sintéticos iniciales: faenas, frentes, beacons, usuarios y marcas. |
-| `app/src/main/assets/map.html` | Mapa Leaflet + OpenStreetMap dentro de un WebView; dibuja el centro, el radio de la geocerca y un aviso si no hay conexión. |
+| `app/src/main/assets/map.html` | Mapa Leaflet + OpenStreetMap del diseño anterior. Ya **no se usa**: la pantalla de mapa ahora es Mapbox (se conserva solo como referencia). |
 | `app/src/main/res/values/strings.xml` | Nombre visible de la app. |
 | `app/src/main/res/values/themes.xml` | Tema XML base claro (fondo y barra de estado) antes de que Compose tome el control. |
 | `app/src/main/res/values-night/themes.xml` | Variante oscura del tema XML para evitar el destello blanco de noche. |
@@ -328,7 +328,7 @@ smartvolt/
 | `ui/horasextra/ResumenHorasExtraScreen.kt` | Contenido reutilizable de resumen: tarjetas por estado y lista de solicitudes. |
 | `ui/calendario/CalendarioScreen.kt` | Historial agrupado por fecha, con filtros de 7 días, 30 días o todo. |
 | `ui/calendario/CalendarioViewModel.kt` | Carga y agrupa las marcas por día según el rol (operario, capataz o admin). |
-| `ui/mapa/MapaScreen.kt` | Muestra el mapa de la faena en un WebView con Leaflet/OpenStreetMap. |
+| `ui/mapa/MapaScreen.kt` | Muestra el mapa de la faena con **Mapbox Maps SDK + maps-compose** (centro, marcador y tarjeta con el radio del perímetro). |
 | `ui/mapa/MapaViewModel.kt` | Obtiene de Room el centro, radio y nombre de la faena del usuario. |
 | `ui/visacion/DetalleVisacionScreen.kt` | Detalle de solo lectura de una marca y su visación. |
 | `ui/visacion/DetalleVisacionViewModel.kt` | Carga la marca y la visación asociada desde el repositorio. |
@@ -366,7 +366,7 @@ smartvolt/
 | Navegación funcional / estructura modular | `ui/navigation/AppNav.kt`, paquetes `data/domain/ui/di/sensors/sync/notifications`, MVVM con Hilt. |
 | Gestión de estado | `StateFlow` + `collectAsState` en todos los ViewModels; `SessionState` compartido. |
 | Almacenamiento local operativo | `data/local/Entities.kt`, `Daos.kt`, `AttendanceRepository.kt`, `assets/seed.json`. |
-| Recursos nativos (≥ 2) | GPS y BLE reales en `sensors/RealSensors.kt`; permisos en `CheckInScreen`; `FileProvider` en `AdminScreen`; WebView/OSM en `MapaScreen`; notificaciones en `Notificaciones.kt`. |
+| Recursos nativos (≥ 2) | GPS y BLE reales en `sensors/RealSensors.kt`; permisos en `CheckInScreen`; `FileProvider` en `AdminScreen`; SDK de mapas Mapbox en `MapaScreen`; notificaciones en `Notificaciones.kt`. |
 | Animaciones | `AppNav.kt`, `CheckInScreen.kt`, `AdminScreen.kt`, `HoraExtraScreen.kt`, `LoginScreen.kt`. |
 
 ---
