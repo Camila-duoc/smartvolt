@@ -5,6 +5,8 @@ Aplicación Android de control de asistencia en faena, escrita en **Kotlin + Jet
 Todos los datos son **ficticios**, pensados para una demo académica sin hardware real.
 
 > Documentación detallada del proyecto y de cada archivo: [DOCUMENTACION.md](DOCUMENTACION.md).
+> Ruta de estudio y mapa de cambios: [RECORRIDO.md](RECORRIDO.md).
+> Cómo conectar el emulador o un celular: [CONECTAR_CELULAR.md](CONECTAR_CELULAR.md).
 
 ## Stack
 
