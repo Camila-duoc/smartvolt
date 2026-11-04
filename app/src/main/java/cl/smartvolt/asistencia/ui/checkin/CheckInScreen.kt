@@ -6,6 +6,16 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +35,7 @@ import cl.smartvolt.asistencia.BuildConfig
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.domain.model.*
 import cl.smartvolt.asistencia.domain.usecase.RegistrarMarcaUseCase
+import cl.smartvolt.asistencia.notifications.Notificaciones
 import cl.smartvolt.asistencia.sensors.DemoState
 import cl.smartvolt.asistencia.sensors.Escenario
 import cl.smartvolt.asistencia.sync.SyncScheduler
@@ -55,7 +66,13 @@ class CheckInViewModel @Inject constructor(
         viewModelScope.launch {
             _ui.value = CheckInUi(cargando = true)
             runCatching { registrar(u.id, u.faenaId, tipo) }
-                .onSuccess { _ui.value = CheckInUi(veredicto = it); SyncScheduler.enqueue(ctx) }
+                .onSuccess {
+                    _ui.value = CheckInUi(veredicto = it)
+                    if (it.estado == EstadoMarca.SOSPECHOSA) {
+                        Notificaciones.marcaSospechosa(ctx, u.id, it.motivo)
+                    }
+                    SyncScheduler.enqueue(ctx)
+                }
                 .onFailure { _ui.value = CheckInUi(error = it.message ?: "Error inesperado") }
         }
     }
@@ -66,11 +83,9 @@ class CheckInViewModel @Inject constructor(
 private fun permisosCriticos(): Array<String> = buildList {
     add(Manifest.permission.ACCESS_FINE_LOCATION)
     if (Build.VERSION.SDK_INT >= 31) add(Manifest.permission.BLUETOOTH_SCAN)
-    if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
 }.toTypedArray()
 
 private fun faltanPermisos(c: Context) = !BuildConfig.USE_FAKE_SENSORS && permisosCriticos()
-    .filter { it != Manifest.permission.POST_NOTIFICATIONS }
     .any { ContextCompat.checkSelfPermission(c, it) != PackageManager.PERMISSION_GRANTED }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,6 +97,17 @@ fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
     var sinPermisos by remember { mutableStateOf(faltanPermisos(ctx)) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { sinPermisos = faltanPermisos(ctx) }
     LaunchedEffect(Unit) { if (sinPermisos) launcher.launch(permisosCriticos()) }
+
+    // Notificaciones locales (Android 13+). Se piden aparte porque no bloquean la marca.
+    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     val nav = LocalNavController.current
     Scaffold(topBar = {
@@ -109,9 +135,35 @@ fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
                 colors = ButtonDefaults.buttonColors(containerColor = Ok), modifier = Modifier.fillMaxWidth().height(88.dp)) { Text("MARCAR ENTRADA") }
             Button(onClick = { vm.marcar(TipoMarca.OUT) }, enabled = !ui.cargando && !sinPermisos,
                 modifier = Modifier.fillMaxWidth().height(88.dp)) { Text("MARCAR SALIDA") }
-            if (ui.cargando) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Validando ubicación y balizas…") }
-            ui.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            ui.veredicto?.let { ResultadoCard(it) }
+            AnimatedVisibility(
+                visible = ui.cargando,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                    Text("Validando ubicación y balizas…")
+                }
+            }
+
+            AnimatedVisibility(
+                visible = ui.error != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                Text(ui.error.orEmpty(), color = MaterialTheme.colorScheme.error)
+            }
+
+            AnimatedContent(
+                targetState = ui.veredicto,
+                transitionSpec = {
+                    (fadeIn(tween(350)) + slideInVertically(tween(350)) { it / 3 }) togetherWith
+                        fadeOut(tween(150))
+                },
+                label = "resultado-marca",
+            ) { veredicto ->
+                if (veredicto != null) ResultadoCard(veredicto)
+            }
             Text("Marcas pendientes de envío: $pendientes")
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedButton(
@@ -149,7 +201,7 @@ fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
 @Composable
 private fun ResultadoCard(v: Veredicto) {
     val color = when (v.estado) { EstadoMarca.VALIDA -> Ok; EstadoMarca.SOSPECHOSA -> Warn; EstadoMarca.RECHAZADA -> Bad }
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth().animateContentSize()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(v.estado.name, color = color, style = MaterialTheme.typography.titleLarge)
             Text(v.motivo)

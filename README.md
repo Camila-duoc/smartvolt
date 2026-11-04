@@ -50,10 +50,11 @@ La semilla (`assets/seed.json`) incluye 4 faenas, 11 frentes, 11 beacons, 27 usu
 ### Operario
 - **Marcar entrada y salida** con validación automática: cada marca pasa por el motor de reglas antifraude (`RuleEngine`) y muestra el veredicto (VÁLIDA, SOSPECHOSA o RECHAZADA) con el detalle de cada regla.
 - **Reglas**: ubicación simulada (mock location), secuencia entrada/salida, geocerca, beacon autorizado, presencia física, modo desarrollador y reloj.
-- **Cadena de hash** por marca (`HashMarca`) para detectar alteraciones.
+- **Cadena de hash** por marca (`HashMarca`) para detectar alteraciones, con verificación de integridad y encadenamiento.
 - **Mi historial** (calendario) y **mapa** de la faena.
-- **Horas extra**: solicitar y consultar el estado de las propias solicitudes.
+- **Horas extra**: solicitar y consultar el estado de las propias solicitudes, con validación por campo, tope de 12 h y motivo mínimo de 10 caracteres.
 - Contador de marcas pendientes de envío.
+- **Notificación local** cuando una marca queda sospechosa y requiere visación.
 
 ### Capataz
 - Panel con la última marca de cada operario de su faena.
@@ -66,10 +67,18 @@ La semilla (`assets/seed.json`) incluye 4 faenas, 11 frentes, 11 beacons, 27 usu
 - **Alertas recientes** en solo lectura (últimas marcas sospechosas o rechazadas).
 - Resumen de horas extra (solicitudes, pendientes, aprobadas y horas aprobadas, rechazadas).
 - **Exportación** a CSV (todas las marcas) y a PDF (resumen), compartidos con el selector de Android mediante `FileProvider`.
+- **Contadores animados** y aparición animada de las alertas.
+- **Verificación de la cadena de hashes**: indica si el registro es íntegro y cuántas marcas de la semilla no son verificables.
+
+### Interfaz y experiencia
+- Tema **Material 3** con tipografía, formas y **modo oscuro** (sigue el ajuste del sistema).
+- **Transiciones animadas** entre pantallas y aparición animada del resultado de la marca.
+- **Notificaciones locales**: marca sospechosa pendiente de visación y sincronización completada (canales `smartvolt_alertas` y `smartvolt_sync`).
+- **Formularios validados** en login y horas extra, con mensajes de error junto a cada campo mientras se escribe.
 
 ## Sincronización
 
-`SyncScheduler` encola un `SyncWorker` (WorkManager, con restricción de red conectada y reintento exponencial) cada vez que se guarda una marca. El worker envía las marcas pendientes y luego intenta actualizar la configuración. En `demo` la API es simulada, así que las marcas pasan a ENVIADA sin backend. Para probar el modo offline, activa el modo avión, marca y vuelve a conectar.
+`SyncScheduler` encola un `SyncWorker` (WorkManager, con restricción de red conectada y reintento exponencial) cada vez que se guarda una marca. El worker envía las marcas pendientes y luego intenta actualizar la configuración. En `demo` la API es simulada, así que las marcas pasan a ENVIADA sin backend. Al terminar, si se enviaron marcas, muestra una notificación local de sincronización completada. Para probar el modo offline, activa el modo avión, marca y vuelve a conectar.
 
 ## Estructura del proyecto
 
@@ -81,6 +90,7 @@ app/src/main/java/cl/smartvolt/asistencia/
 │   ├── remote/       # Api.kt (Retrofit + DTOs), FakeApi.kt (API de demo)
 │   └── repository/   # AttendanceRepository + RoomAttendanceRepository
 ├── di/               # AppModule.kt (Hilt)
+├── notifications/    # Notificaciones.kt (canales, marca sospechosa, sync)
 ├── domain/
 │   ├── antifraude/   # Rules.kt, RuleEngine.kt
 │   ├── geo/          # GeoUtils.kt
@@ -97,8 +107,8 @@ Las pruebas unitarias están en `app/src/test`. Desde Android Studio, ejecuta la
 
 - Geometría y perímetros (`GeoUtils`).
 - Reglas antifraude (`RuleEngine`).
-- Integridad del hash de marcas (`HashMarca`).
-- Horas extra (cálculo y ViewModels).
+- Integridad del hash de marcas (`HashMarca`): hash correcto, detección de alteraciones, enlaces rotos y marcas sin hash.
+- Horas extra (cálculo, validaciones y ViewModels).
 - Calendario, visación y exportación CSV.
 - Métricas de administración, alertas y resumen para PDF.
 - API simulada de demo (`FakeApiService`).

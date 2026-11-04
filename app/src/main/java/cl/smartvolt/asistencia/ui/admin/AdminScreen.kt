@@ -2,6 +2,14 @@ package cl.smartvolt.asistencia.ui.admin
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -113,16 +121,16 @@ fun AdminScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    MetricaCard("Total", m.totalMarcas.toString(), MaterialTheme.colorScheme.primary)
-                    MetricaCard("Válidas", m.marcasValidas.toString(), Ok)
-                    MetricaCard("Sospechosas", m.marcasSospechosas.toString(), Warn)
+                    MetricaCard("Total", m.totalMarcas, MaterialTheme.colorScheme.primary)
+                    MetricaCard("Válidas", m.marcasValidas, Ok)
+                    MetricaCard("Sospechosas", m.marcasSospechosas, Warn)
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    MetricaCard("Rechazadas", m.marcasRechazadas.toString(), Bad)
-                    MetricaCard("Pendientes sync", m.marcasPendientesSync.toString(), MaterialTheme.colorScheme.secondary)
+                    MetricaCard("Rechazadas", m.marcasRechazadas, Bad)
+                    MetricaCard("Pendientes sync", m.marcasPendientesSync, MaterialTheme.colorScheme.secondary)
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -131,10 +139,10 @@ fun AdminScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    MetricaCard("Solicitudes", m.horasExtraTotales.toString(), MaterialTheme.colorScheme.primary)
-                    MetricaCard("Pendientes", m.horasExtraPendientes.toString(), Warn)
+                    MetricaCard("Solicitudes", m.horasExtraTotales, MaterialTheme.colorScheme.primary)
+                    MetricaCard("Pendientes", m.horasExtraPendientes, Warn)
                     MetricaCard("Aprobadas", "${m.horasExtraAprobadasHoras} h", Ok)
-                    MetricaCard("Rechazadas", m.horasExtraRechazadas.toString(), Bad)
+                    MetricaCard("Rechazadas", m.horasExtraRechazadas, Bad)
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -171,8 +179,48 @@ fun AdminScreen(
                 Text("Alertas recientes (solo lectura)", style = MaterialTheme.typography.titleMedium)
                 if (m.alertas.isEmpty()) {
                     Text("No hay marcas sospechosas ni rechazadas", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    Text(
+                        "Toca una alerta para ver el detalle",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
-                m.alertas.forEach { FilaAlerta(it) }
+                AnimatedVisibility(
+                    visible = m.alertas.isNotEmpty(),
+                    enter = fadeIn(tween(350)) + expandVertically(tween(350)),
+                    exit = fadeOut(tween(180)) + shrinkVertically(tween(180)),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        m.alertas.forEach { alerta ->
+                            FilaAlerta(alerta) {
+                                nav.navigate("detalle-visacion/${alerta.marcaId}")
+                            }
+                        }
+                    }
+                }
+
+                m.cadenaIntegra?.let { integra ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Registro inalterable", style = MaterialTheme.typography.titleMedium)
+                    val color = if (integra) Ok else Bad
+                    Text(
+                        text = if (integra) {
+                            "Cadena de hashes íntegra (${m.marcasVerificadas} marcas verificadas)"
+                        } else {
+                            "Cadena alterada: ${m.marcasAlteradas} de ${m.marcasVerificadas} marcas"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = color,
+                    )
+                    if (m.marcasNoVerificables > 0) {
+                        Text(
+                            "${m.marcasNoVerificables} marca(s) de la semilla sin hash (no verificables)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Marcas por faena", style = MaterialTheme.typography.titleMedium)
@@ -227,7 +275,22 @@ private fun FilaResumen(etiqueta: String, valor: String) {
 }
 
 @Composable
+private fun RowScope.MetricaCard(titulo: String, valor: Int, color: Color) {
+    val animado by animateIntAsState(
+        targetValue = valor,
+        animationSpec = tween(durationMillis = 700),
+        label = "metrica-$titulo",
+    )
+    MetricaCardContenido(titulo, animado.toString(), color)
+}
+
+@Composable
 private fun RowScope.MetricaCard(titulo: String, valor: String, color: Color) {
+    MetricaCardContenido(titulo, valor, color)
+}
+
+@Composable
+private fun RowScope.MetricaCardContenido(titulo: String, valor: String, color: Color) {
     Card(
         modifier = Modifier.weight(1f),
         colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f))
@@ -256,11 +319,12 @@ private fun compartirCsv(context: Context, archivo: File) {
 }
 
 @Composable
-private fun FilaAlerta(a: AlertaResumen) {
+private fun FilaAlerta(a: AlertaResumen, onClick: () -> Unit) {
     val color = if (a.estado == EstadoMarca.RECHAZADA) Bad else Warn
     val fecha = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(a.timestampUtc))
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().animateContentSize(),
         colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {

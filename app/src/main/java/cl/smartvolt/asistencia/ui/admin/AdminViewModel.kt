@@ -6,6 +6,8 @@ import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.domain.model.EstadoHoraExtra
 import cl.smartvolt.asistencia.domain.model.EstadoMarca
 import cl.smartvolt.asistencia.domain.usecase.ExportarMarcasCsv
+import cl.smartvolt.asistencia.domain.usecase.HashMarca
+import cl.smartvolt.asistencia.domain.usecase.MarcaHash
 import cl.smartvolt.asistencia.ui.login.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +50,11 @@ data class AdminMetricas(
     val noValidasPorFaenaPct: Map<String, Double> = emptyMap(),
     /** Últimas marcas sospechosas o rechazadas (más recientes primero). */
     val alertas: List<AlertaResumen> = emptyList(),
+    /** Resultado de verificar la cadena de hashes (null si no hay marcas verificables). */
+    val cadenaIntegra: Boolean? = null,
+    val marcasVerificadas: Int = 0,
+    val marcasNoVerificables: Int = 0,
+    val marcasAlteradas: Int = 0,
     val cargando: Boolean = false,
     val exportando: Boolean = false,
     val error: String? = null,
@@ -79,6 +86,18 @@ fun AdminMetricas.comoLineas(ahoraMs: Long = System.currentTimeMillis()): List<S
     alertas.forEach { a ->
         val motivoCorto = if (a.motivo.isBlank()) "" else " · ${a.motivo.take(60)}"
         add("${fecha.format(Date(a.timestampUtc))} · ${a.usuarioId} · ${a.faenaId} · ${a.estado.name}$motivoCorto")
+    }
+    add("")
+    add("REGISTRO INALTERABLE")
+    add(
+        when {
+            cadenaIntegra == null -> "Sin marcas verificables (semilla sin hash)"
+            cadenaIntegra -> "Cadena de hashes íntegra ($marcasVerificadas marcas verificadas)"
+            else -> "Cadena alterada: $marcasAlteradas de $marcasVerificadas marcas"
+        }
+    )
+    if (marcasNoVerificables > 0) {
+        add("Marcas no verificables (sin hash): $marcasNoVerificables")
     }
 }
 
@@ -118,6 +137,22 @@ class AdminViewModel @Inject constructor(
                 .take(MAX_ALERTAS)
                 .map { AlertaResumen(it.id, it.usuarioId, it.faenaId, it.estado, it.motivo, it.timestampUtc) }
 
+            val verificacion = HashMarca.verificarCadena(
+                todas.map {
+                    MarcaHash(
+                        id = it.id,
+                        usuarioId = it.usuarioId,
+                        tipo = it.tipo.name,
+                        lat = it.lat,
+                        lon = it.lon,
+                        timestampUtc = it.timestampUtc,
+                        estado = it.estado.name,
+                        hashPrevio = it.hashPrevio,
+                        hash = it.hash,
+                    )
+                }
+            )
+
             _metricas.value = AdminMetricas(
                 totalMarcas = todas.size,
                 marcasValidas = porEstado[EstadoMarca.VALIDA] ?: 0,
@@ -136,6 +171,10 @@ class AdminViewModel @Inject constructor(
                 horasExtraRechazadas = horasExtra.count { it.estado == EstadoHoraExtra.RECHAZADA },
                 noValidasPorFaenaPct = noValidasPct,
                 alertas = alertas,
+                cadenaIntegra = if (verificacion.verificadas == 0) null else verificacion.integra,
+                marcasVerificadas = verificacion.verificadas,
+                marcasNoVerificables = verificacion.noVerificables,
+                marcasAlteradas = verificacion.invalidas.size,
                 cargando = false,
             )
         } catch (e: Exception) {

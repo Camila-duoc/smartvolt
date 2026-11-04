@@ -1,5 +1,10 @@
 package cl.smartvolt.asistencia.ui.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -29,7 +34,20 @@ val LocalNavController = staticCompositionLocalOf<NavHostController> {
 fun AppNav() {
     val nav = rememberNavController()
     CompositionLocalProvider(LocalNavController provides nav) {
-        NavHost(nav, startDestination = "login") {
+        NavHost(
+            navController = nav,
+            startDestination = "login",
+            enterTransition = {
+                slideInHorizontally(animationSpec = tween(320), initialOffsetX = { it / 5 }) +
+                    fadeIn(animationSpec = tween(320))
+            },
+            exitTransition = { fadeOut(animationSpec = tween(180)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(320)) },
+            popExitTransition = {
+                slideOutHorizontally(animationSpec = tween(320), targetOffsetX = { it / 5 }) +
+                    fadeOut(animationSpec = tween(180))
+            },
+        ) {
             composable("login") {
                 LoginScreen(
                     onLogin = { rol ->
