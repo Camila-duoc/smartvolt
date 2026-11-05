@@ -7,6 +7,7 @@ Todos los datos son **ficticios**, pensados para una demo académica sin hardwar
 > Documentación detallada del proyecto y de cada archivo: [DOCUMENTACION.md](DOCUMENTACION.md).
 > Ruta de estudio y mapa de cambios: [RECORRIDO.md](RECORRIDO.md).
 > Cómo conectar el emulador o un celular: [CONECTAR_CELULAR.md](CONECTAR_CELULAR.md).
+> Cómo poner el logo de Figma como icono de la app: [ICONO.md](ICONO.md).
 
 ## Stack
 

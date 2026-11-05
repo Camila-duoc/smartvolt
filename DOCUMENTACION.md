@@ -267,6 +267,9 @@ smartvolt/
 | `app/src/main/res/values/themes.xml` | Tema XML base claro (fondo y barra de estado) antes de que Compose tome el control. |
 | `app/src/main/res/values-night/themes.xml` | Variante oscura del tema XML para evitar el destello blanco de noche. |
 | `app/src/main/res/drawable/ic_notificacion.xml` | Ícono vectorial usado por las notificaciones locales. |
+| `app/src/main/res/mipmap-*/ic_launcher*.png` | Ícono de la app en todas las densidades (48–192 px), más `foreground` y `monochrome` del ícono adaptativo. |
+| `app/src/main/res/mipmap-anydpi-v26/ic_launcher*.xml` | Ícono adaptativo de Android 8+: fondo, capa frontal y versión monocroma. |
+| `app/src/main/res/values/colors.xml` | Color de fondo del ícono adaptativo (`ic_launcher_background`). |
 | `app/src/main/res/xml/file_paths.xml` | Define `cache/exports` como ruta compartible por `FileProvider`. |
 
 ### 6.3 Punto de entrada
