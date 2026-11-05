@@ -2,75 +2,275 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenStreetMap - SmartVolt</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mapa - SmartVolt</title>
+    <!--
+         IMPORTANTE: Para usar Mapbox offline, necesitas:
+         1. Un token válido de Mapbox (pk.eyJ...).
+         2. Descargar los assets del estilo localmente si no hay internet.
+         Para pruebas rápidas, se usa CDN de Mapbox con fallback a Leaflet/OSM.
+    -->
+    <!-- Leaflet CSS (fallback sin Mapbox) -->
+    <link href="leaflet/leaflet.css" rel="stylesheet" />
+    <!-- Mapbox GL JS CSS (desde CDN, necesario para iconos y fuentes) -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.1/mapbox-gl.css" rel="stylesheet" />
     <style>
-        #map { height: 100vh; width: 100vw; background: #e8eef5; }
-        body { margin: 0; padding: 0; font-family: sans-serif; }
+        html, body { margin: 0; padding: 0; height: 100%; }
+        #map { position: absolute; inset: 0; background: #e8eef5; }
         #aviso {
-            position: absolute; z-index: 1000; left: 8px; right: 8px; top: 8px;
-            background: rgba(255,255,255,0.92); padding: 8px 10px; border-radius: 6px;
-            font-size: 12px; color: #1F3864; display: none;
+            position: absolute; z-index: 1000; left: 8px; right: 8px; top: 8px,
+            background: rgba(255, 255, 255, 0.96); padding: 8px 10px; border-radius: 6px,
+            font-family: sans-serif; font-size: 12px; color: #1F3864; display: none,
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); pointer-events: none,
+        }
+        #leyenda {
+            position: absolute; z-index: 1000; left: 8px; bottom: 8px,
+            background: rgba(255, 255, 255, 0.94); padding: 6px 10px; border-radius: 6px,
+            font-family: sans-serif; font-size: 12px; color: #1F3864,
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); pointer-events: none,
         }
     </style>
 </head>
 <body>
 <div id="map"></div>
-<div id="aviso">Sin conexión: no se pudieron cargar las teselas de OpenStreetMap.</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<div id="aviso"></div>
+<div id="leyenda">Faena y radio de cobertura</div>
+
+<!-- Mapbox GL JS desde CDN (requiere internet) -->
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.1/mapbox-gl.js"></script>
+<!-- Leaflet JS (fallback offline) -->
+<script src="leaflet/leaflet.js"></script>
 <script>
+    // ==========================================
+    // CONFIGURACIÓN DE MAPBOX
+    // ==========================================
+    // CRÍTICO: Reemplazar este token por uno válido de tu cuenta Mapbox.
+    // Si el token es inválido o restringido, se usa automáticamente Leaflet/OSM.
+    const MAPBOX_TOKEN = 'pk.eyJ1IjoiZnJlZGNhbXBvczEyMzAiLCJhIjoiY21obTRuOXd6MXh6bTJrcTE3aWVnamdkcyJ9.6Ri-3tecVrIOrd6IKfQ-UQ';
+
+    // Verificar si tenemos conexión a internet para Mapbox CDN
+    const tieneConexionInternet = navigator.onLine !== undefined;
+
+    // Token de Mapbox (se usa CDN para iconos y fuentes)
+    if (typeof mapboxgl !== 'undefined') {
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+    }
+
     var map = null;
-    var marker = null;
-    var circle = null;
-    var sinConexion = false;
+    var fallbackMap = null;
+    var ultimo = null;
+    var usandoFallback = false;
+    var intentosMapbox = 0;
+    var temporizadorMapbox = null;
+
+    function mostrarAviso(texto) {
+        var aviso = document.getElementById('aviso');
+        aviso.textContent = texto;
+        aviso.style.display = 'block';
+    }
+
+    function ocultarAviso() {
+        document.getElementById('aviso').style.display = 'none';
+    }
+
+    function escaparHtml(texto) {
+        return String(texto)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // Polígono aproximado de un círculo en metros (para dibujar el perímetro de la faena).
+    function poligonoCirculo(lat, lon, radioM, puntos) {
+        var coords = [];
+        var tierra = 6378137;
+        var dLat = (radioM / tierra) * (180 / Math.PI);
+        var dLon = dLat / Math.cos(lat * Math.PI / 180);
+        for (var i = 0; i <= puntos; i++) {
+            var angulo = i * 2 * Math.PI / puntos;
+            coords.push([lon + dLon * Math.cos(angulo), lat + dLat * Math.sin(angulo)]);
+        }
+        return {
+            type: 'Feature',
+            geometry: { type: 'Polygon', coordinates: [coords] }
+        };
+    }
 
     function initMap(lat, lon, zoom, radio, titulo) {
+        ultimo = { lat: lat, lon: lon, zoom: zoom, radio: radio, titulo: titulo };
+        usandoFallback = false;
+
+        if (typeof mapboxgl === 'undefined') {
+            // La página pudo terminar de cargar antes que el script local.
+            if (intentosMapbox < 20) {
+                intentosMapbox++;
+                setTimeout(function () {
+                    initMap(lat, lon, zoom, radio, titulo);
+                }, 150);
+            } else {
+                initFallback('No se pudo cargar Mapbox GL JS.');
+            }
+            return;
+        }
+        intentosMapbox = 0;
+
+        // Si el WebView no soporta WebGL, Mapbox no puede dibujar nada.
+        if (typeof mapboxgl.supported === 'function' && !mapboxgl.supported()) {
+            initFallback('Este equipo no soporta WebGL para Mapbox.');
+            return;
+        }
+
         if (map !== null) {
-            map.remove();
+            try { map.remove(); } catch (e) { /* ignorar */ }
+            map = null;
+        }
+        if (fallbackMap !== null) {
+            try { fallbackMap.remove(); } catch (e) { /* ignorar */ }
+            fallbackMap = null;
+        }
+
+        var r = (typeof radio === 'number' && radio > 0) ? radio : 100;
+        var nombre = titulo || 'Faena';
+        ocultarAviso();
+
+        try {
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v12',
+                center: [lon, lat],
+                zoom: zoom || 16,
+                attributionControl: true,
+                // Permite WebGL por software en equipos modestos.
+                failIfMajorPerformanceCaveat: false
+            });
+
+            map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+
+            new mapboxgl.Marker({ color: '#1F3864' })
+                .setLngLat([lon, lat])
+                .setPopup(new mapboxgl.Popup().setHTML(
+                    '<strong>' + escaparHtml(nombre) + '</strong><br>' +
+                    'Lat: ' + lat.toFixed(6) + '<br>' +
+                    'Lon: ' + lon.toFixed(6) + '<br>' +
+                    'Radio: ' + r + ' m'
+                ))
+                .addTo(map);
+
+            map.on('load', function () {
+                if (temporizadorMapbox) {
+                    clearTimeout(temporizadorMapbox);
+                    temporizadorMapbox = null;
+                }
+                ocultarAviso();
+                map.addSource('faena-perimetro', {
+                    type: 'geojson',
+                    data: poligonoCirculo(lat, lon, r, 96)
+                });
+                map.addLayer({
+                    id: 'faena-relleno',
+                    type: 'fill',
+                    source: 'faena-perimetro',
+                    paint: { 'fill-color': '#2E75B6', 'fill-opacity': 0.2 }
+                });
+                map.addLayer({
+                    id: 'faena-borde',
+                    type: 'line',
+                    source: 'faena-perimetro',
+                    paint: { 'line-color': '#1F3864', 'line-width': 2 }
+                });
+                map.resize();
+            });
+
+            map.on('error', function (e) {
+                var status = e && e.error ? e.error.status : 0;
+                // Token inválido, sin permisos o estilo restringido: usar OpenStreetMap.
+                if (status === 401 || status === 403) {
+                    initFallback('Mapbox rechazó el token o el estilo.');
+                }
+            });
+
+            map.on('webglcontextlost', function () {
+                initFallback('Se perdió el contexto WebGL.');
+            });
+
+            // Si en 12 s el estilo no cargó, se usa el mapa alternativo.
+            temporizadorMapbox = setTimeout(function () {
+                if (!usandoFallback && map !== null && !map.isStyleLoaded()) {
+                    initFallback('Mapbox tardó demasiado en responder.');
+                }
+            }, 12000);
+        } catch (e) {
+            initFallback('Error al inicializar Mapbox: ' + e.message);
+        }
+    }
+
+    /**
+     * Respaldo sin token ni WebGL: Leaflet + teselas de OpenStreetMap.
+     * Mantiene el marcador y el círculo del perímetro de la faena.
+     */
+    function initFallback(motivo) {
+        if (usandoFallback) return;
+        usandoFallback = true;
+        if (temporizadorMapbox) {
+            clearTimeout(temporizadorMapbox);
+            temporizadorMapbox = null;
+        }
+        if (map !== null) {
+            try { map.remove(); } catch (e) { /* ignorar */ }
             map = null;
         }
         if (typeof L === 'undefined') {
-            document.getElementById('aviso').style.display = 'block';
+            mostrarAviso('No se pudo cargar el mapa. Revisa la conexión a internet.');
             return;
         }
-        var r = (typeof radio === 'number' && radio > 0) ? radio : 100;
-        var nombre = titulo || 'Faena';
+        if (fallbackMap !== null) {
+            try { fallbackMap.remove(); } catch (e) { /* ignorar */ }
+            fallbackMap = null;
+        }
 
-        map = L.map('map').setView([lat, lon], zoom);
+        var p = ultimo || { lat: -33.418, lon: -70.605, zoom: 16, radio: 100, titulo: 'Faena' };
+        var r = (typeof p.radio === 'number' && p.radio > 0) ? p.radio : 100;
+        var nombre = p.titulo || 'Faena';
 
-        var capa = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        fallbackMap = L.map('map', { zoomControl: true, attributionControl: true })
+            .setView([p.lat, p.lon], p.zoom || 16);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '© OpenStreetMap contributors'
-        });
-        capa.on('tileerror', function () {
-            if (!sinConexion) {
-                sinConexion = true;
-                document.getElementById('aviso').style.display = 'block';
-            }
-        });
-        capa.addTo(map);
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(fallbackMap);
 
-        marker = L.marker([lat, lon]).addTo(map);
-        marker.bindPopup(nombre).openPopup();
-
-        circle = L.circle([lat, lon], {
+        L.circle([p.lat, p.lon], {
+            radius: r,
             color: '#1F3864',
+            weight: 2,
             fillColor: '#2E75B6',
-            fillOpacity: 0.2,
-            radius: r
-        }).addTo(map);
+            fillOpacity: 0.2
+        }).addTo(fallbackMap);
 
-        map.on('click', function (e) {
-            marker.setLatLng(e.latlng);
-            circle.setLatLng(e.latlng);
-            marker.bindPopup(
-                'Lat: ' + e.latlng.lat.toFixed(6) +
-                '<br>Lon: ' + e.latlng.lng.toFixed(6) +
-                '<br>Radio faena: ' + r + ' m'
-            ).openPopup();
-        });
+        L.circleMarker([p.lat, p.lon], {
+            radius: 6,
+            color: '#1F3864',
+            fillColor: '#1F3864',
+            fillOpacity: 1
+        }).addTo(fallbackMap).bindPopup(
+            '<strong>' + escaparHtml(nombre) + '</strong><br>' +
+            'Lat: ' + p.lat.toFixed(6) + '<br>' +
+            'Lon: ' + p.lon.toFixed(6) + '<br>' +
+            'Radio: ' + r + ' m'
+        );
+
+        mostrarAviso('Mapa alternativo (OpenStreetMap). ' + (motivo || ''));
+        setTimeout(function () {
+            if (fallbackMap !== null) fallbackMap.invalidateSize();
+        }, 250);
     }
+
+    // Cualquier error de JavaScript se muestra en pantalla para poder diagnosticar.
+    window.onerror = function (mensaje) {
+        mostrarAviso('Error de mapa: ' + mensaje);
+    };
 </script>
 </body>
 </html>

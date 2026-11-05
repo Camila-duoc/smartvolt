@@ -5,9 +5,12 @@
     <!-- Ubicación -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Bluetooth Android 12+ -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation" tools:targetApi="s" />
+    <!-- Bluetooth Android 12+.
+         IMPORTANTE: No usar neverForLocation en el permiso BLUETOOTH_SCAN,
+         ya que ese flag hace que Android filtre los anuncios BLE que podrían
+         revelar ubicación (como los iBeacons). El escaneo así funciona correctamente. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:required="false" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" android:required="false" />
     <!-- Bluetooth Android 11 e inferior -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />

@@ -1,16 +1,19 @@
 package cl.smartvolt.asistencia.sensors
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import android.os.Build
 import android.os.CancellationSignal
 import android.provider.Settings
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import cl.smartvolt.asistencia.domain.model.*
@@ -29,14 +32,24 @@ import java.util.UUID
 import kotlin.coroutines.resume
 
 /**
- * Ubicación real con dos motores:
+ * PROVEEDOR DE UBICACIÓN REAL usando Fused Location Provider + GPS del sistema.
  *
- * 1. **Fused Location Provider** (Google Play Services) cuando está disponible y sano.
- * 2. **LocationManager del sistema** como respaldo.
+ * Arquitectura de Ubicación:
+ * ==========================
+ * 1. FusedLocationProviderImpl (Google Play Services)
+ *    - Usa el sensor combinado de ubicación de Google (GPS + WiFi + red)
+ *    - Más rápido y preciso en dispositivos con GMS
+ *    - Fallback automático a PlatformLocationProvider si GMS falla
  *
- * El respaldo cubre emuladores AOSP y equipos sin Google Play Services válidos,
- * donde Fused falla con el código 17 (`SERVICE_INVALID`). Así la app no depende
- * de GMS para poder marcar asistencia.
+ * 2. PlatformLocationProvider (LocationManager del sistema)
+ *    - Usa los sensores del sistema Android directamente
+ *    - Funciona en emuladores AOSP y dispositivos sin Google Play Services
+ *    - Fallback cuando Fused falla con SERVICE_INVALID (código 17)
+ *
+ * Flujo de uso típico:
+ * - App solicita permisos de ubicación
+ * - RegistrarMarcaUseCase llama a location.obtener()
+ * - Se captura ubicación y se evalúa con el RuleEngine
  */
 class FusedLocationProviderImpl(private val context: Context) : LocationProvider {
     private val fused by lazy { LocationServices.getFusedLocationProviderClient(context) }
@@ -75,6 +88,11 @@ class FusedLocationProviderImpl(private val context: Context) : LocationProvider
 /**
  * Respaldo basado en `LocationManager` (GPS/red). No depende de Google Play Services,
  * por lo que funciona en emuladores AOSP y equipos sin GMS.
+ *
+ * Características:
+ * - Usa GPS cuando está disponible para mayor precisión
+ * - Fallback a red (NETWORK_PROVIDER) si GPS no está activo
+ * - Timeout de 8 segundos para evitar bloqueos
  */
 class PlatformLocationProvider(private val context: Context) : LocationProvider {
     @SuppressLint("MissingPermission")
@@ -121,31 +139,161 @@ private fun Location.aUbicacionCapturada(): UbicacionCapturada {
     return UbicacionCapturada(latitude, longitude, accuracy, mock)
 }
 
-/** Lee balizas iBeacon (fabricante Apple 0x004C, prefijo 0x02 0x15) y promedia el RSSI por UUID. */
+/**
+ * ESCANNER BLE - Lectura de iBeacons iBeacon (Eddystone/AltBeacon)
+ *
+ * formato de iBeacon:
+ * ==================
+ * - Manufacturer ID: 0x004C (Apple)
+ * - Tipo: 0x02 (Tipo de paquete)
+ * - Sub-tipo: 0x15 (UUID Length = 16)
+ * - UUID: 16 bytes (identificador del beacon)
+ * - Major: 2 bytes (identificador de grupo/frente)
+ * - Minor: 2 bytes (identificador individual)
+ * - TX Power: 1 byte (potencia a 1m)
+ *
+ * Notas de compatibilidad:
+ * - Android 12+ (API 31+): requiere BLUETOOTH_SCAN y BLUETOOTH_CONNECT
+ *   Importante: NO usar neverForLocation, de lo contrario el escaneo
+ *   filtrará anuncios que podrían revelar ubicación.
+ * - Android 11 e inferior (API 30-): requiere permiso de ubicación
+ * - Se registra el resultado en Logcat con el tag `SmartVoltBLE` para diagnosticar.
+ *
+ * Flujo de escaneo:
+ * 1. Se solicita permiso BLUETOOTH_SCAN (Android 12+) y BLUETOOTH_CONNECT
+ * 2. Se verifica que Bluetooth esté habilitado
+ * 3. Se inicia escaneo en modo LOW_LATENCY (rápido pero consume más batería)
+ * 4. Se acumulan lecturas RSSI por UUID durante la ventana de tiempo
+ * 5. Se calcula RSSI promedio y número de muestras
+ */
 class BleScannerImpl(private val context: Context) : BleScanner {
     @SuppressLint("MissingPermission")
     override suspend fun escanear(autorizados: List<BeaconAutorizado>, ventanaMs: Long): List<LecturaBle> {
-        val adapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
-        val scanner = adapter?.takeIf { it.isEnabled }?.bluetoothLeScanner ?: return emptyList()
-        val acumulado = mutableMapOf<String, MutableList<Int>>()
-        val callback = object : ScanCallback() {
-            override fun onScanResult(callbackType: Int, result: ScanResult) {
-                val data = result.scanRecord?.getManufacturerSpecificData(0x004C) ?: return
-                if (data.size < 18 || data[0] != 0x02.toByte() || data[1] != 0x15.toByte()) return
-                val bb = ByteBuffer.wrap(data, 2, 16)
-                val uuid = UUID(bb.long, bb.long).toString().uppercase()
-                synchronized(acumulado) { acumulado.getOrPut(uuid) { mutableListOf() }.add(result.rssi) }
+        val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        val adapter = manager?.adapter
+        if (adapter == null || !context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            Log.w(TAG, "Este equipo no tiene soporte Bluetooth LE")
+            return emptyList()
+        }
+
+        // Verificar permisos Android 12+
+        if (Build.VERSION.SDK_INT >= 31 &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.w(TAG, "Permiso BLUETOOTH_CONNECT no concedido")
+            return emptyList()
+        }
+
+        if (!adapter.isEnabled) {
+            Log.w(TAG, "Bluetooth apagado; no se puede escanear")
+            return emptyList()
+        }
+
+        if (Build.VERSION.SDK_INT >= 31 &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.w(TAG, "Permiso BLUETOOTH_SCAN no concedido")
+            return emptyList()
+        }
+
+        // En Android 11 e inferior el escaneo BLE exige la ubicación activa.
+        if (Build.VERSION.SDK_INT <= 30) {
+            val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+            if (lm == null || !LocationManagerCompat.isLocationEnabled(lm)) {
+                Log.w(TAG, "Ubicación desactivada; BLE no puede escanear en Android 11 o inferior")
+                return emptyList()
             }
         }
-        val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
-        scanner.startScan(null, settings, callback)
-        try { delay(ventanaMs) } finally { scanner.stopScan(callback) }
-        return synchronized(acumulado) {
-            acumulado.map { (uuid, rssis) -> LecturaBle(uuid, rssis.average().toInt(), rssis.size) }
+
+        val scanner = adapter.bluetoothLeScanner ?: run {
+            Log.w(TAG, "BluetoothLeScanner no disponible")
+            return emptyList()
         }
+
+        // Mapa para acumular RSSI por UUID del beacon detectado
+        val acumulado = mutableMapOf<String, MutableList<Int>>()
+
+        val callback = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult) {
+                // 1. Obtener datos manufacturer específicos (Apple usa 0x004C como manufacturer ID)
+                //    Los iBeacons empiezan con el prefijo 0x02 0x15 después del header.
+                val data = result.scanRecord?.getManufacturerSpecificData(0x004C) ?: return
+                if (data.size < 18 || data[0] != 0x02.toByte() || data[1] != 0x15.toByte()) return
+
+                // 2. EXTRAER EL UUID CORRECTAMENTE: Los 16 bytes del UUID están en posiciones 2-17 del frame.
+                //    El método UUID(mostSigBits, leastSigBits) espera:
+                //    - mostSigBits = bytes 0-7 del UUID (128 bits superiores)
+                //    - leastSigBits = bytes 8-15 del UUID (128 bits inferiores)
+                //    ByteBuffer.position() INCREMENTA automáticamente al leer, así que:
+                //    - primer long: bytes 2-9 del data (UUID bytes 0-7)
+                //    - segundo long: bytes 10-17 del data (UUID bytes 8-15)
+                val bb = ByteBuffer.wrap(data, 2, 16)
+                val uuid = UUID(bb.long, bb.long).toString().uppercase()
+                synchronized(acumulado) {
+                    acumulado.getOrPut(uuid) { mutableListOf() }.add(result.rssi)
+                }
+                Log.d(TAG, "iBeacon detectado: $uuid RSSI=${result.rssi}")
+            }
+
+            override fun onScanFailed(errorCode: Int) {
+                Log.e(TAG, "Fallo de escaneo BLE, código=$errorCode")
+            }
+        }
+
+        // Configuración del escáner:
+        // - SCAN_MODE_LOW_LATENCY: escaneo continuo, rápido pero consume más batería
+        // - CALLBACK_TYPE_ALL_MATCHES: devuelve todas las coincidencias
+        // - MATCH_MODE_AGGRESSIVE: no filtra por cercanía
+        // - REPORT_DELAY=0: devuelve resultados inmediatamente
+        val settings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+            .setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
+            .setReportDelay(0)
+            .build()
+
+        Log.d(TAG, "Iniciando escaneo BLE por ${ventanaMs}ms (${autorizados.size} beacons autorizados)")
+        try {
+            scanner.startScan(null, settings, callback)
+        } catch (e: Exception) {
+            // Bluetooth pudo apagarse o el permiso revocarse entre la validación y el inicio.
+            Log.e(TAG, "No se pudo iniciar el escaneo BLE", e)
+            return emptyList()
+        }
+        try {
+            delay(ventanaMs)
+        } finally {
+            runCatching { scanner.stopScan(callback) }
+        }
+
+        // Calcular RSSI promedio y número de muestras por beacon
+        return synchronized(acumulado) {
+            acumulado.map { (uuid, rssis) ->
+                LecturaBle(uuid, rssis.average().toInt(), rssis.size)
+            }
+        }.also { lecturas ->
+            if (lecturas.isEmpty()) {
+                Log.w(TAG, "Escaneo BLE sin resultados")
+            } else {
+                Log.d(TAG, "Escaneo BLE: ${lecturas.joinToString { "${it.uuid} ${it.rssiPromedio}dBm" }}")
+            }
+        }
+    }
+
+    private companion object {
+        const val TAG = "SmartVoltBLE"
     }
 }
 
+/**
+ * Proveedor del estado del sistema.
+ *
+ * Información útil para detección de fraude:
+ * - modoDesarrollador: si está activo, podría indicar uso de herramientas de depuración
+ * - horaAutomatica: si está desactivada, el usuario pudo manipular la hora del sistema
+ */
 class SystemStateProviderImpl(private val context: Context) : SystemStateProvider {
     override fun estado(): EstadoSistema {
         val cr = context.contentResolver
