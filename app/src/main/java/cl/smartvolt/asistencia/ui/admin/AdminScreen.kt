@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -90,6 +91,9 @@ fun AdminScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { nav.navigate("mapa") }) {
+                        Icon(Icons.Default.Map, contentDescription = "Ubicación en el mapa")
+                    }
                     IconButton(onClick = {
                         vm.cerrarSesion()
                         nav.navigate("login") { popUpTo(nav.graph.id) { inclusive = true } }
@@ -143,6 +147,16 @@ fun AdminScreen(
                     MetricaCard("Pendientes", m.horasExtraPendientes, Warn)
                     MetricaCard("Aprobadas", "${m.horasExtraAprobadasHoras} h", Ok)
                     MetricaCard("Rechazadas", m.horasExtraRechazadas, Bad)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { nav.navigate("mapa") },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Default.Map, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Seleccionar ubicación en el mapa")
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

@@ -23,6 +23,9 @@ interface AttendanceRepository {
     suspend fun usuariosDeFaena(faenaId: String): List<UsuarioEntity> = TODO("No implementado en este doble de prueba")
     suspend fun faena(id: String): FaenaEntity? = TODO("No implementado en este doble de prueba")
     suspend fun perimetro(faenaId: String): Perimetro? = TODO("No implementado en este doble de prueba")
+    suspend fun ubicacionCompartida(): UbicacionCompartida? = null
+    suspend fun guardarUbicacionCompartida(lat: Double, lon: Double, usuarioId: String): Unit =
+        TODO("No implementado en este doble de prueba")
     suspend fun beacons(faenaId: String): List<BeaconAutorizado> = TODO("No implementado en este doble de prueba")
     suspend fun ultimaMarcaValida(usuarioId: String): TipoMarca? = TODO("No implementado en este doble de prueba")
     suspend fun ultimoHash(usuarioId: String): String = TODO("No implementado en este doble de prueba")
@@ -101,6 +104,24 @@ class RoomAttendanceRepository @Inject constructor(
         val f = config.faena(faenaId) ?: return null
         val poly = f.poligonoJson?.let { json.decodeFromString<List<List<Double>>>(it) }?.map { LatLon(it[0], it[1]) }
         return Perimetro(f.tipoPerimetro, LatLon(f.centroLat, f.centroLon), f.radioM, poly)
+    }
+
+    /** Punto del mapa configurado por administración; null si todavía no elige ninguno. */
+    override suspend fun ubicacionCompartida(): UbicacionCompartida? =
+        config.ubicacionCompartida()?.let {
+            UbicacionCompartida(it.lat, it.lon, it.actualizadoPor, it.actualizadoEn)
+        }
+
+    override suspend fun guardarUbicacionCompartida(lat: Double, lon: Double, usuarioId: String) {
+        config.upsertUbicacionCompartida(
+            UbicacionCompartidaEntity(
+                id = 1,
+                lat = lat,
+                lon = lon,
+                actualizadoPor = usuarioId,
+                actualizadoEn = System.currentTimeMillis(),
+            )
+        )
     }
 
     override suspend fun beacons(faenaId: String) =

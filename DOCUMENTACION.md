@@ -46,6 +46,7 @@ Todo funciona **offline-first**: las marcas se validan y guardan en el teléfono
 2. Ve **alertas recientes** (sospechosas/rechazadas) y puede abrir su detalle en solo lectura.
 3. Ve el estado de la **cadena de hashes** (“Registro inalterable”).
 4. Exporta un **CSV** de marcas y un **PDF** de resumen usando el selector de compartir de Android.
+5. **Selecciona la ubicación del mapa** que verán todos los roles: toca el mapa y guarda el punto. El capataz solo puede consultarlo.
 
 ---
 
@@ -116,8 +117,9 @@ Las marcas de la semilla no traen hash: se informan como **no verificables** par
 
 ### 3.5 Persistencia y offline-first
 
-- **Room** es la fuente de verdad local. Base `smartvolt.db`, versión 3, con migraciones 1→2 y 2→3.
-- 9 entidades: usuarios, faenas, frentes, beacons, marcas, lecturas BLE, eventos antifraude, visaciones y horas extra.
+- **Room** es la fuente de verdad local. Base `smartvolt.db`, versión 4, con migraciones 1→2, 2→3 y 3→4.
+- 10 entidades: usuarios, faenas, frentes, beacons, marcas, lecturas BLE, eventos antifraude, visaciones, horas extra y ubicación compartida del mapa.
+- La **ubicación del mapa** la guarda el administrador en `ubicacion_compartida`; operarios y capataces la leen y no pueden modificarla.
 - La primera vez se carga `assets/seed.json` (4 faenas, 11 frentes, 11 beacons, 27 usuarios y 122 marcas).
 - Las marcas nuevas quedan `PENDIENTE`; `SyncWorker` las envía y las marca `ENVIADA` o `ERROR`.
 - En `demo`, `FakeApiService` acepta todo; en `campo`, Retrofit apunta a `API_BASE_URL`.
@@ -283,8 +285,8 @@ smartvolt/
 
 | Archivo | Función |
 |---|---|
-| `data/local/Entities.kt` | Las 9 entidades Room: usuarios, faenas, frentes, beacons, marcas, lecturas BLE, eventos antifraude, visaciones y horas extra. Define claves, índices y claves foráneas. |
-| `data/local/Daos.kt` | DAOs de configuración, marcas y horas extra. Incluye las consultas, las migraciones 1→2 y 2→3, y el singleton `AppDatabase`. |
+| `data/local/Entities.kt` | Las 10 entidades Room: usuarios, faenas, frentes, beacons, marcas, lecturas BLE, eventos antifraude, visaciones, horas extra y ubicación compartida. Define claves, índices y claves foráneas. |
+| `data/local/Daos.kt` | DAOs de configuración, marcas y horas extra. Incluye las consultas, las migraciones 1→2, 2→3 y 3→4, y el singleton `AppDatabase`. |
 | `data/remote/Api.kt` | DTOs `@Serializable` y la interfaz Retrofit `ApiService` (envío de lotes y configuración). También define el formato de `seed.json`. |
 | `data/remote/FakeApi.kt` | Implementación simulada de `ApiService` para `demo`: acepta todas las marcas y devuelve configuración vacía. |
 | `data/repository/AttendanceRepository.kt` | Contrato de acceso a datos + `RoomAttendanceRepository`. Implementa lectura local, guardado transaccional, visación, sincronización, carga de la semilla y horas extra. |
@@ -331,8 +333,8 @@ smartvolt/
 | `ui/horasextra/ResumenHorasExtraScreen.kt` | Contenido reutilizable de resumen: tarjetas por estado y lista de solicitudes. |
 | `ui/calendario/CalendarioScreen.kt` | Historial agrupado por fecha, con filtros de 7 días, 30 días o todo. |
 | `ui/calendario/CalendarioViewModel.kt` | Carga y agrupa las marcas por día según el rol (operario, capataz o admin). |
-| `ui/mapa/MapaScreen.kt` | Muestra el mapa de la faena con **Mapbox Maps SDK + maps-compose** (centro, marcador y tarjeta con el radio del perímetro). |
-| `ui/mapa/MapaViewModel.kt` | Obtiene de Room el centro, radio y nombre de la faena del usuario. |
+| `ui/mapa/MapaScreen.kt` | Muestra el mapa con **Mapbox Maps SDK + maps-compose**. Si el rol es ADMIN, permite tocar el mapa y guardar la ubicación para todos; los demás roles solo la consultan. |
+| `ui/mapa/MapaViewModel.kt` | Carga la ubicación compartida o, si no existe, el centro y radio de la faena. Autoriza el cambio únicamente a ADMIN. |
 | `ui/visacion/DetalleVisacionScreen.kt` | Detalle de solo lectura de una marca y su visación. |
 | `ui/visacion/DetalleVisacionViewModel.kt` | Carga la marca y la visación asociada desde el repositorio. |
 | `ui/admin/AdminScreen.kt` | Panel de administración: métricas animadas, exportación CSV/PDF, porcentaje de marcas no válidas, alertas con navegación a detalle y estado de la cadena de hashes. |
@@ -397,7 +399,7 @@ Estas piezas están fuera del alcance del MVP actual y quedan documentadas como 
 - **Autenticación real** por usuario o biometría (hoy el PIN es fijo `1234` para la demo).
 - **Ausentismo real** (hoy se miden marcas no válidas, no ausencias).
 - **Backend Spring Boot** real (hoy la variante demo usa `FakeApiService`).
-- **Registro de usuarios** desde administración (opcional; requeriría una migración 3→4).
+- **Registro de usuarios** desde administración (opcional; requeriría una migración 4→5).
 - **Recordar el formulario al rotar** ya está resuelto con `rememberSaveable` en login y horas extra.
 
 ---

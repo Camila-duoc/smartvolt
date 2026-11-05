@@ -17,6 +17,14 @@ data class Perimetro(
     val poligono: List<LatLon>? = null,
 )
 
+/** Punto del mapa elegido por administración y compartido con todos los roles. */
+data class UbicacionCompartida(
+    val lat: Double,
+    val lon: Double,
+    val actualizadoPor: String = "",
+    val actualizadoEn: Long = 0L,
+)
+
 data class BeaconAutorizado(val uuid: String, val rssiMinimo: Int, val frenteId: String?)
 data class LecturaBle(val uuid: String, val rssiPromedio: Int, val muestras: Int)
 data class UbicacionCapturada(val lat: Double, val lon: Double, val accuracyM: Float, val isMock: Boolean)

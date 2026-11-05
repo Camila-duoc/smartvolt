@@ -63,6 +63,20 @@ data class VisacionEntity(
     @PrimaryKey val marcaId: String, val supervisorId: String, val aprobada: Boolean, val timestamp: Long,
 )
 
+/**
+ * Ubicación compartida del mapa. El administrador la elige una vez y todos los
+ * roles (operario, capataz y administración) ven el mismo punto.
+ * Se usa una sola fila con [id] fijo para simplificar la demo local.
+ */
+@Entity(tableName = "ubicacion_compartida")
+data class UbicacionCompartidaEntity(
+    @PrimaryKey val id: Int = 1,
+    val lat: Double,
+    val lon: Double,
+    val actualizadoPor: String,
+    val actualizadoEn: Long,
+)
+
 @Entity(
     tableName = "horas_extra",
     indices = [Index("usuarioId"), Index("estado"), Index("marcaId")],

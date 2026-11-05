@@ -26,6 +26,12 @@ interface ConfigDao {
     @Query("SELECT * FROM beacons WHERE faenaId = :faenaId") suspend fun beacons(faenaId: String): List<BeaconEntity>
     @Query("SELECT * FROM usuarios WHERE faenaId = :faenaId") suspend fun usuariosDeFaena(faenaId: String): List<UsuarioEntity>
     @Query("SELECT COUNT(*) FROM faenas") suspend fun contarFaenas(): Int
+
+    /** Ubicación elegida por administración; hay como máximo una fila. */
+    @Query("SELECT * FROM ubicacion_compartida WHERE id = 1")
+    suspend fun ubicacionCompartida(): UbicacionCompartidaEntity?
+
+    @Upsert suspend fun upsertUbicacionCompartida(u: UbicacionCompartidaEntity)
 }
 
 @Dao
@@ -155,11 +161,29 @@ val MIGRACION_2_3: Migration = object : Migration(2, 3) {
     }
 }
 
+/** Migración de la versión 3 a la 4: ubicación del mapa compartida por todos los roles. */
+val MIGRACION_3_4: Migration = object : Migration(3, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS ubicacion_compartida (
+                id INTEGER NOT NULL,
+                lat REAL NOT NULL,
+                lon REAL NOT NULL,
+                actualizadoPor TEXT NOT NULL,
+                actualizadoEn INTEGER NOT NULL,
+                PRIMARY KEY (id)
+            )
+            """.trimIndent()
+        )
+    }
+}
+
 @Database(
     entities = [UsuarioEntity::class, FaenaEntity::class, FrenteEntity::class, BeaconEntity::class,
         MarcaEntity::class, LecturaBleEntity::class, EventoAntifraudeEntity::class, VisacionEntity::class,
-        HoraExtraEntity::class],
-    version = 3, exportSchema = false,
+        HoraExtraEntity::class, UbicacionCompartidaEntity::class],
+    version = 4, exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun configDao(): ConfigDao
@@ -172,7 +196,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(context, AppDatabase::class.java, "smartvolt.db")
-                    .addMigrations(MIGRACION_1_2, MIGRACION_2_3)
+                    .addMigrations(MIGRACION_1_2, MIGRACION_2_3, MIGRACION_3_4)
                     .build()
                     .also { INSTANCE = it }
             }

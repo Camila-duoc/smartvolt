@@ -74,6 +74,7 @@ La semilla (`assets/seed.json`) incluye 4 faenas, 11 frentes, 11 beacons, 27 usu
 - **Exportación** a CSV (todas las marcas) y a PDF (resumen), compartidos con el selector de Android mediante `FileProvider`.
 - **Contadores animados** y aparición animada de las alertas.
 - **Verificación de la cadena de hashes**: indica si el registro es íntegro y cuántas marcas de la semilla no son verificables.
+- **Selección de la ubicación del mapa**: el administrador toca el mapa y guarda el punto que verán operarios y capataces.
 
 ### Interfaz y experiencia
 - Tema **Material 3** con tipografía, formas y **modo oscuro** (sigue el ajuste del sistema).
@@ -83,7 +84,10 @@ La semilla (`assets/seed.json`) incluye 4 faenas, 11 frentes, 11 beacons, 27 usu
 
 ## Mapa de la faena
 
-La pantalla **Ver mapa** usa el **Mapbox Maps SDK** con la extensión **maps-compose** (la misma combinación del ejemplo `GeoMapbox` del profesor). Muestra el centro del perímetro de la faena, un marcador y una tarjeta con el radio autorizado.
+La pantalla **Ver mapa** usa el **Mapbox Maps SDK** con la extensión **maps-compose** (la misma combinación del ejemplo `GeoMapbox` del profesor). Muestra un marcador y una tarjeta con el radio autorizado.
+
+- **Administración** puede tocar el mapa y pulsar **Guardar ubicación para todos**; el punto queda en Room.
+- **Operarios y capataces** ven ese mismo punto en modo solo lectura. Si administración todavía no elige uno, se usa el centro del perímetro de la faena.
 
 - Dependencias: `com.mapbox.maps:android-ndk27:11.16.2` y `com.mapbox.extension:maps-compose-ndk27:11.16.2` (declaradas en `gradle/libs.versions.toml`).
 - Repositorio Maven de Mapbox: `https://api.mapbox.com/downloads/v2/releases/maven` (en `settings.gradle.kts`).

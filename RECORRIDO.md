@@ -167,8 +167,8 @@ Lee esto solo para entender con qué está construido. No lo memorices.
 
 | Archivo | Qué mirar |
 |---|---|
-| `data/local/Entities.kt` | Las 9 entidades Room y sus relaciones. |
-| `data/local/Daos.kt` | Consultas, migraciones 1→2 y 2→3, y `AppDatabase`. |
+| `data/local/Entities.kt` | Las 10 entidades Room y sus relaciones. |
+| `data/local/Daos.kt` | Consultas, migraciones 1→2, 2→3 y 3→4, y `AppDatabase`. |
 | `data/remote/Api.kt` | DTOs y `ApiService` de Retrofit. |
 | `data/remote/FakeApi.kt` | API simulada de `demo`. |
 | `data/repository/AttendanceRepository.kt` | Contrato + implementación Room/Retrofit; guardado transaccional, sync, semilla y horas extra. |
@@ -204,8 +204,8 @@ Lee esto solo para entender con qué está construido. No lo memorices.
 | `ui/visacion/DetalleVisacionViewModel.kt` | Carga marca + visación. |
 | `ui/calendario/CalendarioScreen.kt` | Historial por rango. |
 | `ui/calendario/CalendarioViewModel.kt` | Agrupación por fecha según rol. |
-| `ui/mapa/MapaScreen.kt` | Mapa Mapbox con marcador en el centro de la faena. |
-| `ui/mapa/MapaViewModel.kt` | Centro y radio de la faena. |
+| `ui/mapa/MapaScreen.kt` | Mapa Mapbox; ADMIN elige y guarda la ubicación, los demás roles solo la consultan. |
+| `ui/mapa/MapaViewModel.kt` | Ubicación compartida (o centro de la faena) y permiso de edición solo para ADMIN. |
 | `ui/horasextra/HoraExtraScreen.kt` | Formulario de horas extra con íconos y errores por campo. |
 | `ui/horasextra/HoraExtraViewModel.kt` | Estado y acciones de horas extra. |
 | `ui/horasextra/AprobarHoraExtraScreen.kt` | Supervisión de solicitudes. |
@@ -262,7 +262,7 @@ Esta es la parte más útil para una defensa: casi ningún cambio toca un solo a
 
 | Si piden... | Archivos |
 |---|---|
-| Agregar un campo a la marca (batería, modelo, etc.) | `Entities.kt`, `Daos.kt` (subir versión y crear migración 3→4), `Models.kt` (`Evidencia`), `RegistrarMarcaUseCase.kt`, `HashMarca.kt` si el campo entra al hash, `Api.kt` (`MarcaDto`), `AttendanceRepository.kt`, `ExportarMarcasCsv.kt`, `DetalleVisacionScreen.kt` y tests. |
+| Agregar un campo a la marca (batería, modelo, etc.) | `Entities.kt`, `Daos.kt` (subir versión y crear migración 4→5), `Models.kt` (`Evidencia`), `RegistrarMarcaUseCase.kt`, `HashMarca.kt` si el campo entra al hash, `Api.kt` (`MarcaDto`), `AttendanceRepository.kt`, `ExportarMarcasCsv.kt`, `DetalleVisacionScreen.kt` y tests. |
 | Agregar una tabla nueva | `Entities.kt`, `Daos.kt` (DAO + migración + versión), `AppModule.kt` si se expone el DAO, `AttendanceRepository.kt` si se usa desde la UI. |
 | Cambiar los datos de la semilla | `assets/seed.json`; si cambia la estructura, `Api.kt` (`SeedDto`) y `AttendanceRepository.kt` (`cargarSemillaSiVacio`). |
 | Cifrar la base (SQLCipher) | `app/build.gradle.kts` (dependencia), `AppModule.kt` (constructor de la DB), `Daos.kt` si cambia la inicialización. |
