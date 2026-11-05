@@ -2,6 +2,7 @@ package cl.smartvolt.asistencia.ui.admin
 
 import android.content.Context
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateIntAsState
@@ -50,6 +51,11 @@ fun AdminScreen(
     val pdf by vm.pdf.collectAsState()
     val context = LocalContext.current
     val nav = LocalNavController.current
+    val volverAlLogin: () -> Unit = {
+        vm.cerrarSesion()
+        onNavUp()
+    }
+    BackHandler(onBack = volverAlLogin)
 
     LaunchedEffect(Unit) { vm.cargarMetricas() }
     LaunchedEffect(csv) {
@@ -85,15 +91,12 @@ fun AdminScreen(
             TopAppBar(
                 title = { Text("Administración") },
                 navigationIcon = {
-                    IconButton(onClick = onNavUp) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                    IconButton(onClick = volverAlLogin) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver al inicio de sesión")
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        vm.cerrarSesion()
-                        nav.navigate("login") { popUpTo(nav.graph.id) { inclusive = true } }
-                    }) {
+                    IconButton(onClick = volverAlLogin) {
                         Icon(Icons.Default.Logout, contentDescription = "Cerrar sesión")
                     }
                 }

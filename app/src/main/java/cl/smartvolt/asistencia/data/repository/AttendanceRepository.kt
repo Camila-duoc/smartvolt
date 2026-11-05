@@ -173,10 +173,16 @@ class RoomAttendanceRepository @Inject constructor(
         val seed = context.assets.open("seed.json").bufferedReader().use { json.decodeFromString<SeedDto>(it.readText()) }
         aplicarConfiguracion(ConfiguracionDto(seed.faenas, seed.frentes, seed.beacons, seed.usuarios))
         val faenaDe = seed.usuarios.associate { it.id to it.faenaId }
+        // La semilla trae fechas fijas. Para que el calendario y los reportes
+        // muestren actividad reciente en cualquier fecha de evaluación, se
+        // desplazan todas las marcas manteniendo su orden cronológico.
+        val ahora = System.currentTimeMillis()
+        val ultimaMarca = seed.marcas.maxOfOrNull { it.timestampUtc } ?: ahora
+        val desplazamiento = (ahora - ultimaMarca).coerceAtLeast(0L)
         marcas.insertMarcas(seed.marcas.map {
             MarcaEntity(
                 it.id, it.usuarioId, faenaDe[it.usuarioId].orEmpty(), TipoMarca.valueOf(it.tipo), it.lat, it.lon, it.accuracy,
-                it.timestampUtc, 0L, EstadoMarca.valueOf(it.estado), it.motivo, SyncEstado.valueOf(it.syncEstado), "", "", 
+                it.timestampUtc + desplazamiento, 0L, EstadoMarca.valueOf(it.estado), it.motivo, SyncEstado.valueOf(it.syncEstado), "", "",
             )
         })
     }

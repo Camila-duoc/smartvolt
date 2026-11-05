@@ -1,9 +1,12 @@
 package cl.smartvolt.asistencia.ui.foreman
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Logout
@@ -58,10 +61,26 @@ class ForemanViewModel @Inject constructor(
 fun ForemanScreen(vm: ForemanViewModel = hiltViewModel()) {
     val filas by vm.filas.collectAsState()
     val nav = LocalNavController.current
+    val totalAnimado by animateIntAsState(filas.size, label = "total-operarios")
+    val sospechosasAnimadas by animateIntAsState(
+        filas.count { it.marca.estado == EstadoMarca.SOSPECHOSA && it.visada == null },
+        label = "sospechosas-por-visar",
+    )
+    val volverAlLogin: () -> Unit = {
+        vm.cerrarSesion()
+        nav.navigate("login") { popUpTo(nav.graph.id) { inclusive = true } }
+    }
+    BackHandler(onBack = volverAlLogin)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Panel de presencia") },
+                navigationIcon = {
+                    IconButton(onClick = volverAlLogin) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver al inicio de sesión")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { nav.navigate("aprobar-horas-extra") }) {
                         Icon(Icons.Default.HourglassEmpty, contentDescription = "Horas extra")
@@ -72,10 +91,7 @@ fun ForemanScreen(vm: ForemanViewModel = hiltViewModel()) {
                     IconButton(onClick = { nav.navigate("mapa") }) {
                         Icon(Icons.Default.Map, contentDescription = "Mapa")
                     }
-                    IconButton(onClick = {
-                        vm.cerrarSesion()
-                        nav.navigate("login") { popUpTo(nav.graph.id) { inclusive = true } }
-                    }) {
+                    IconButton(onClick = volverAlLogin) {
                         Icon(Icons.Default.Logout, contentDescription = "Cerrar sesión")
                     }
                 }
@@ -83,7 +99,12 @@ fun ForemanScreen(vm: ForemanViewModel = hiltViewModel()) {
         }
     ) { pad ->
         LazyColumn(Modifier.padding(pad).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            item { Text("Operarios con marcas: ${filas.size} · Sospechosas por visar: ${filas.count { it.marca.estado == EstadoMarca.SOSPECHOSA && it.visada == null }}") }
+            item {
+                Text(
+                    "Operarios con marcas: $totalAnimado · Sospechosas por visar: $sospechosasAnimadas",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
             items(filas, key = { it.marca.id }) { f ->
                 val color = when (f.marca.estado) { EstadoMarca.VALIDA -> Ok; EstadoMarca.SOSPECHOSA -> Warn; EstadoMarca.RECHAZADA -> Bad }
                 Card(Modifier.fillMaxWidth()) {

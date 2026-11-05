@@ -88,7 +88,12 @@ fun AppNav() {
                 DetalleVisacionScreen(marcaId = marcaId, onNavUp = { nav.popBackStack() })
             }
             composable("admin") {
-                AdminScreen(onNavUp = { nav.popBackStack() })
+                AdminScreen(
+                    onNavUp = {
+                        // El administrador es una pantalla raíz: atrás vuelve al login.
+                        nav.navigate("login") { popUpTo(nav.graph.id) { inclusive = true } }
+                    }
+                )
             }
         }
     }

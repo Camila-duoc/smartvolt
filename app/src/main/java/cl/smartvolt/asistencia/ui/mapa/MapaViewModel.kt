@@ -31,6 +31,7 @@ class MapaViewModel @Inject constructor(
 
     /** Carga el centro y radio del perímetro de la faena del usuario desde Room. */
     fun cargar() = viewModelScope.launch {
+        _ui.value = _ui.value.copy(cargando = true, error = null)
         val usuario = session.usuario.value
         if (usuario == null) {
             _ui.value = MapaUi(cargando = false, error = "No hay sesión activa")

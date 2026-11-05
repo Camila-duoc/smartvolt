@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,6 +38,7 @@ import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.domain.model.*
 import cl.smartvolt.asistencia.domain.usecase.RegistrarMarcaUseCase
 import cl.smartvolt.asistencia.notifications.Notificaciones
+import cl.smartvolt.asistencia.sensors.BleScanner
 import cl.smartvolt.asistencia.sensors.DemoState
 import cl.smartvolt.asistencia.sensors.Escenario
 import cl.smartvolt.asistencia.sync.SyncScheduler
@@ -47,13 +50,27 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class CheckInUi(val cargando: Boolean = false, val veredicto: Veredicto? = null, val error: String? = null)
+data class CheckInUi(
+    val cargando: Boolean = false,
+    val veredicto: Veredicto? = null,
+    val error: String? = null,
+    val aviso: String? = null,
+    val avisoId: Long = 0,
+)
+
+/** Resultado de la prueba manual de beacon (solo variante campo). */
+data class BeaconTestUi(
+    val probando: Boolean = false,
+    val mensaje: String? = null,
+    val lecturas: List<LecturaBle> = emptyList(),
+)
 
 @HiltViewModel
 class CheckInViewModel @Inject constructor(
     private val registrar: RegistrarMarcaUseCase,
-    repo: AttendanceRepository,
+    private val repo: AttendanceRepository,
     private val session: SessionState,
+    private val ble: BleScanner,
     @ApplicationContext private val ctx: Context,
 ) : ViewModel() {
     private val _ui = MutableStateFlow(CheckInUi())
@@ -61,13 +78,71 @@ class CheckInViewModel @Inject constructor(
     val pendientes = repo.contarPendientes().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
     val usuarioId get() = session.usuario.value?.id.orEmpty()
 
+    /** Beacons autorizados de la faena: se muestran para configurar Locate Beacon. */
+    private val _beacons = MutableStateFlow<List<BeaconAutorizado>>(emptyList())
+    val beacons: StateFlow<List<BeaconAutorizado>> = _beacons
+
+    private val _beaconTest = MutableStateFlow(BeaconTestUi())
+    val beaconTest: StateFlow<BeaconTestUi> = _beaconTest
+
+    init {
+        viewModelScope.launch {
+            session.usuario.value?.let { u -> _beacons.value = repo.beacons(u.faenaId) }
+        }
+    }
+
+    /** Escanea 8 s y muestra qué iBeacons ve realmente el teléfono. */
+    fun probarBeacon() {
+        val u = session.usuario.value ?: return
+        viewModelScope.launch {
+            _beaconTest.value = BeaconTestUi(probando = true)
+            val autorizados = repo.beacons(u.faenaId)
+            _beacons.value = autorizados
+            val lecturas = runCatching { ble.escanear(autorizados, 8_000) }
+                .getOrElse {
+                    _beaconTest.value = BeaconTestUi(
+                        mensaje = it.message ?: "No se pudo escanear Bluetooth.",
+                    )
+                    return@launch
+                }
+            val validas = lecturas.filter { l ->
+                autorizados.any { a ->
+                    a.uuid.equals(l.uuid, ignoreCase = true) && l.rssiPromedio >= a.rssiMinimo
+                }
+            }
+            _beaconTest.value = BeaconTestUi(
+                mensaje = when {
+                    lecturas.isEmpty() ->
+                        "No se detectó ningún iBeacon. Revisa Bluetooth, ubicación, permisos y que Locate Beacon esté emitiendo en primer plano."
+                    validas.isEmpty() ->
+                        "Se detectaron ${lecturas.size} beacon(s), pero ninguno autorizado o con señal suficiente."
+                    else ->
+                        "Beacon autorizado detectado: ${validas.first().uuid} (${validas.first().rssiPromedio} dBm)."
+                },
+                lecturas = lecturas,
+            )
+        }
+    }
+
     fun marcar(tipo: TipoMarca) {
         val u = session.usuario.value ?: return
         viewModelScope.launch {
             _ui.value = CheckInUi(cargando = true)
             runCatching { registrar(u.id, u.faenaId, tipo) }
                 .onSuccess {
-                    _ui.value = CheckInUi(veredicto = it)
+                    // La regla SECUENCIA es la que detecta entradas duplicadas o
+                    // salidas sin entrada. Se avisa con un Snackbar flotante.
+                    val fallo = it.resultados.firstOrNull { r -> r.regla == "SECUENCIA" && !r.aprobada }
+                    val aviso = when {
+                        fallo == null -> null
+                        tipo == TipoMarca.IN -> "Ya registraste tu entrada. Marca salida para cerrar el turno."
+                        else -> "No hay una entrada previa registrada. Marca entrada primero."
+                    }
+                    _ui.value = CheckInUi(
+                        veredicto = it,
+                        aviso = aviso,
+                        avisoId = if (aviso != null) System.currentTimeMillis() else 0,
+                    )
                     if (it.estado == EstadoMarca.SOSPECHOSA) {
                         Notificaciones.marcaSospechosa(ctx, u.id, it.motivo)
                     }
@@ -85,12 +160,19 @@ class CheckInViewModel @Inject constructor(
         }
     }
 
+    fun limpiarAviso() {
+        _ui.value = _ui.value.copy(aviso = null)
+    }
+
     fun cerrarSesion() = session.cerrarSesion()
 }
 
 private fun permisosCriticos(): Array<String> = buildList {
     add(Manifest.permission.ACCESS_FINE_LOCATION)
-    if (Build.VERSION.SDK_INT >= 31) add(Manifest.permission.BLUETOOTH_SCAN)
+    if (Build.VERSION.SDK_INT >= 31) {
+        add(Manifest.permission.BLUETOOTH_SCAN)
+        add(Manifest.permission.BLUETOOTH_CONNECT)
+    }
 }.toTypedArray()
 
 private fun faltanPermisos(c: Context) = !BuildConfig.USE_FAKE_SENSORS && permisosCriticos()
@@ -102,6 +184,9 @@ fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
     val ctx = LocalContext.current
     val ui by vm.ui.collectAsState()
     val pendientes by vm.pendientes.collectAsState()
+    val beacons by vm.beacons.collectAsState()
+    val beaconTest by vm.beaconTest.collectAsState()
+    var mostrarBeacons by remember { mutableStateOf(false) }
     var sinPermisos by remember { mutableStateOf(faltanPermisos(ctx)) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { sinPermisos = faltanPermisos(ctx) }
     LaunchedEffect(Unit) { if (sinPermisos) launcher.launch(permisosCriticos()) }
@@ -118,19 +203,39 @@ fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
     }
 
     val nav = LocalNavController.current
-    Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Marcar asistencia · ${vm.usuarioId}") },
-            actions = {
-                IconButton(onClick = {
-                    vm.cerrarSesion()
-                    nav.navigate("login") { popUpTo(nav.graph.id) { inclusive = true } }
-                }) {
-                    Icon(Icons.Default.Logout, contentDescription = "Cerrar sesión")
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(ui.avisoId) {
+        val aviso = ui.aviso
+        if (aviso != null) {
+            snackbarHostState.showSnackbar(aviso)
+            vm.limpiarAviso()
+        }
+    }
+    val volverAlLogin: () -> Unit = {
+        vm.cerrarSesion()
+        nav.navigate("login") { popUpTo(nav.graph.id) { inclusive = true } }
+    }
+    // En la pantalla raíz el botón atrás vuelve al login, no cierra la app.
+    BackHandler(onBack = volverAlLogin)
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Marcar asistencia · ${vm.usuarioId}") },
+                navigationIcon = {
+                    IconButton(onClick = volverAlLogin) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver al inicio de sesión")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = volverAlLogin) {
+                        Icon(Icons.Default.Logout, contentDescription = "Cerrar sesión")
+                    }
                 }
-            }
-        )
-    }) { pad ->
+            )
+        }
+    ) { pad ->
         Column(Modifier.padding(pad).padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (sinPermisos) {
                 Card { Column(Modifier.padding(16.dp)) {
@@ -197,10 +302,83 @@ fun CheckInScreen(vm: CheckInViewModel = hiltViewModel()) {
             if (BuildConfig.USE_FAKE_SENSORS) {
                 val actual by DemoState.escenario.collectAsState()
                 Text("Modo demo: escenario simulado", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "Esta variante no usa GPS ni Bluetooth reales. Para probar el beacon instala la variante campo.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
                 Escenario.values().forEach { e ->
                     FilterChip(selected = actual == e, onClick = { DemoState.escenario.value = e }, label = { Text(e.name) })
                 }
                 Text("Para probar offline, activa el modo avión.", style = MaterialTheme.typography.bodySmall)
+            }
+
+            // Ayuda para terreno: muestra los UUID que espera la faena del usuario.
+            if (!BuildConfig.USE_FAKE_SENSORS) {
+                if (beacons.isNotEmpty()) {
+                    TextButton(
+                        onClick = { mostrarBeacons = !mostrarBeacons },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(if (mostrarBeacons) "Ocultar beacons de prueba" else "Beacon de prueba (Locate Beacon)")
+                    }
+                    AnimatedVisibility(
+                        visible = mostrarBeacons,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically(),
+                    ) {
+                        Card(Modifier.fillMaxWidth()) {
+                            Column(
+                                Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Text(
+                                    "Configura un iBeacon con uno de estos UUID:",
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                                beacons.forEach { b ->
+                                    Text("• ${b.uuid}", style = MaterialTheme.typography.bodySmall)
+                                }
+                                Text(
+                                    "RSSI mínimo: ${beacons.first().rssiMinimo} dBm · major/minor no importan",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Prueba real de escaneo: sirve para separar un problema de la app
+                // de un problema de configuración del beacon.
+                Card(Modifier.fillMaxWidth()) {
+                    Column(
+                        Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text("Diagnóstico del beacon", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "Bluetooth encendido y Locate Beacon emitiendo en primer plano.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Button(
+                            onClick = { vm.probarBeacon() },
+                            enabled = !beaconTest.probando,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(if (beaconTest.probando) "Escaneando 8 s…" else "Probar beacon (8 s)")
+                        }
+                        beaconTest.mensaje?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall)
+                        }
+                        beaconTest.lecturas.forEach { l ->
+                            Text(
+                                "• ${l.uuid} · ${l.rssiPromedio} dBm · ${l.muestras} muestras",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                }
             }
         }
     }

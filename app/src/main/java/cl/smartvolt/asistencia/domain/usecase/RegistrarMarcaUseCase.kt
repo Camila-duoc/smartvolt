@@ -9,6 +9,8 @@ import cl.smartvolt.asistencia.domain.usecase.HashMarca
 import cl.smartvolt.asistencia.sensors.BleScanner
 import cl.smartvolt.asistencia.sensors.LocationProvider
 import cl.smartvolt.asistencia.sensors.SystemStateProvider
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import java.util.UUID
 import javax.inject.Inject
 
@@ -30,8 +32,13 @@ class RegistrarMarcaUseCase @Inject constructor(
         val perimetro = repo.perimetro(faenaId) ?: error("Faena $faenaId sin perímetro cargado")
         val beacons = repo.beacons(faenaId)
 
-        val ubicacion = location.obtener(perimetro.centro)
-        val lecturas = ble.escanear(beacons)
+        // GPS y BLE se capturan en paralelo: la marca tarda el máximo de ambos
+        // (antes eran secuenciales y podía superar los 12 segundos).
+        val (ubicacion, lecturas) = coroutineScope {
+            val loc = async { location.obtener(perimetro.centro) }
+            val bleLecturas = async { ble.escanear(beacons) }
+            loc.await() to bleLecturas.await()
+        }
         val ahora = clock.nowUtcMs()
 
         val evidencia = Evidencia(

@@ -11,6 +11,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -18,22 +21,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.smartvolt.asistencia.domain.usecase.SolicitarHoraExtraUseCase
+import cl.smartvolt.asistencia.domain.validation.ValidadorHoraExtra
 import cl.smartvolt.asistencia.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
-
-private val MAX_HORAS_TXT =
-    if (SolicitarHoraExtraUseCase.MAX_HORAS % 1.0 == 0.0) {
-        SolicitarHoraExtraUseCase.MAX_HORAS.toInt().toString()
-    } else {
-        SolicitarHoraExtraUseCase.MAX_HORAS.toString()
-    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,29 +52,17 @@ fun HoraExtraScreen(
     val fechaTxt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(fechaSeleccionada))
 
     val horasNum = horas.replace(',', '.').toDoubleOrNull()
-    val horasError = when {
-        horas.isBlank() -> "Ingresa las horas solicitadas"
-        horasNum == null -> "Usa un número válido (ej. 1.5)"
-        horasNum <= 0 -> "Las horas deben ser mayores a 0"
-        horasNum > SolicitarHoraExtraUseCase.MAX_HORAS ->
-            "Máximo $MAX_HORAS_TXT h por solicitud"
-        else -> null
-    }
+    val horasError = ValidadorHoraExtra.horas(horas)
     val motivoLimpio = motivo.trim()
-    val motivoError = when {
-        motivoLimpio.isEmpty() -> "El motivo es obligatorio"
-        motivoLimpio.length < SolicitarHoraExtraUseCase.MIN_MOTIVO ->
-            "Mínimo ${SolicitarHoraExtraUseCase.MIN_MOTIVO} caracteres (llevas ${motivoLimpio.length})"
-        else -> null
-    }
-    val formularioValido = horasError == null && motivoError == null
+    val motivoError = ValidadorHoraExtra.motivo(motivo)
+    val formularioValido = ValidadorHoraExtra.formularioValido(horas, motivo)
     val mostrarHorasError = tocadoHoras && horasError != null
     val mostrarMotivoError = tocadoMotivo && motivoError != null
 
     val horasSupport: (@Composable () -> Unit)? =
-        if (mostrarHorasError) ({ Text(horasError.orEmpty()) }) else null
+        if (mostrarHorasError) ({ TextoError(horasError.orEmpty()) }) else null
     val motivoSupport: (@Composable () -> Unit)? =
-        if (mostrarMotivoError) ({ Text(motivoError.orEmpty()) }) else null
+        if (mostrarMotivoError) ({ TextoError(motivoError.orEmpty()) }) else null
 
     Scaffold(
         topBar = {
@@ -91,7 +77,7 @@ fun HoraExtraScreen(
         ) {
             Text("Solicitud de horas extra", style = MaterialTheme.typography.headlineSmall)
             Text(
-                "Tope: $MAX_HORAS_TXT h · motivo mínimo ${SolicitarHoraExtraUseCase.MIN_MOTIVO} caracteres",
+                "Tope: ${ValidadorHoraExtra.maxHorasTexto} h · motivo mínimo ${SolicitarHoraExtraUseCase.MIN_MOTIVO} caracteres",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -104,6 +90,7 @@ fun HoraExtraScreen(
                     tocadoHoras = true
                 },
                 label = { Text("Horas solicitadas") },
+                leadingIcon = { Icon(Icons.Default.Timer, contentDescription = "Horas") },
                 isError = mostrarHorasError,
                 supportingText = horasSupport,
                 keyboardOptions = KeyboardOptions(
@@ -122,6 +109,7 @@ fun HoraExtraScreen(
                     tocadoMotivo = true
                 },
                 label = { Text("Motivo / justificación") },
+                leadingIcon = { Icon(Icons.Default.Notes, contentDescription = "Motivo") },
                 isError = mostrarMotivoError,
                 supportingText = motivoSupport,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -186,5 +174,20 @@ fun HoraExtraScreen(
                 }
             }
         }
+    }
+}
+
+/** Mensaje de error de campo con ícono, consistente con el formulario de login. */
+@Composable
+private fun TextoError(mensaje: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            Icons.Default.Error,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(mensaje, color = MaterialTheme.colorScheme.error)
     }
 }

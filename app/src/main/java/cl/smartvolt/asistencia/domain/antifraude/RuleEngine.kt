@@ -29,7 +29,7 @@ class RuleEngine(private val reglas: List<FraudRule>) {
             return RuleEngine(
                 listOf(
                     MockLocationRule(), SequenceRule(), geofence, beacon,
-                    PresenciaFisicaRule(geofence, beacon), DeveloperModeRule(), ClockRule(),
+                    PresenciaFisicaRule(geofence, beacon), ClockRule(),
                 ),
             )
         }

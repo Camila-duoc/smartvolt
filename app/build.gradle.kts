@@ -48,5 +48,6 @@ dependencies {
     implementation(libs.kotlinx.serialization)
     implementation(libs.coroutines.android); implementation(libs.coroutines.play)
     implementation(libs.play.location)
+    implementation(libs.androidx.webkit)
     testImplementation(libs.junit); testImplementation(libs.coroutines.test)
 }

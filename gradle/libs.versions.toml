@@ -17,6 +17,7 @@ okhttp = "4.12.0"
 serialization = "1.7.2"
 coroutines = "1.8.1"
 playServicesLocation = "21.3.0"
+webkit = "1.12.1"
 junit = "4.13.2"
 
 [libraries]
@@ -47,6 +48,7 @@ kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines-play = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 play-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
+androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
 junit = { module = "junit:junit", version.ref = "junit" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 

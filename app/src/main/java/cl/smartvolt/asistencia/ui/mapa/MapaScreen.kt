@@ -3,6 +3,7 @@ package cl.smartvolt.asistencia.ui.mapa
 import android.util.Log
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
@@ -52,8 +53,8 @@ import org.json.JSONObject
  * - Se inyecta la ubicación del usuario vía JavaScript cuando la página carga
  *
  * PROBLEMA RESUELTO:
- * - El WebViewAssetLoader no funciona bien con recursos externos de Mapbox
- * - Ahora se carga map.html desde la URL del asset loader y Mapbox usa CDN directamente
+ * - El WebViewAssetLoader sirve assets locales (leaflet/ desde assets/)
+ * - Mapbox GL JS se carga desde CDN directamente
  * - Si no hay internet o Mapbox falla, Leaflet con OpenStreetMap funciona como fallback
  *
  * NOTA: Para uso offline total, necesitarías:
@@ -73,7 +74,6 @@ fun MapaScreen(
     val lat = ui.lat
     val lon = ui.lon
     val titulo = if (ui.nombreFaena.isBlank()) "Mapa de la faena" else "Mapa · ${ui.nombreFaena}"
-    val ctx = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -110,7 +110,7 @@ fun MapaScreen(
                 lat != null && lon != null -> key(recarga) {
                     AndroidView(
                         modifier = Modifier.fillMaxSize(),
-                        factory = { webCtx ->
+                        factory = { ctx ->
                             val radio = ui.radioM
                             val nombre = JSONObject.quote(ui.nombreFaena)
 
@@ -118,10 +118,10 @@ fun MapaScreen(
                             // IMPORTANTE: mapbox-gl.js se carga desde CDN en el HTML, así que este loader
                             // solo es necesario para el fallback de Leaflet.
                             val assetLoader = WebViewAssetLoader.Builder()
-                                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(webCtx))
+                                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(ctx))
                                 .build()
 
-                            WebView(webCtx).apply {
+                            WebView(ctx).apply {
                                 // Habilitar depuración Web Inspector solo en debug
                                 if (BuildConfig.DEBUG) WebView.setWebContentsDebuggingEnabled(true)
 
@@ -138,7 +138,7 @@ fun MapaScreen(
                                 settings.setSupportZoom(false)
                                 settings.builtInZoomControls = false
 
-                                // Manejar las peticiones a assets locales (leaflet)
+                                // WebViewClient: manejar peticiones a assets y errores
                                 webViewClient = object : WebViewClient() {
                                     override fun shouldInterceptRequest(
                                         view: WebView?,
@@ -148,7 +148,7 @@ fun MapaScreen(
                                         return request?.let { assetLoader.shouldInterceptRequest(it.url) }
                                     }
 
-                                    override fun onPageFinished(view: WebView?, url: string?) {
+                                    override fun onPageFinished(view: WebView?, url: String?) {
                                         super.onPageFinished(view, url)
                                         Log.d("SmartVoltMap", "Página cargada: $url")
 
@@ -158,6 +158,17 @@ fun MapaScreen(
                                             "initMap($lat, $lon, 16, $radio, $nombre);",
                                             null
                                         )
+                                    }
+
+                                    override fun onReceivedError(
+                                        view: WebView?,
+                                        request: WebResourceRequest?,
+                                        error: WebResourceError?,
+                                    ) {
+                                        super.onReceivedError(view, request, error)
+                                        val code = error?.errorCode ?: -1
+                                        val desc = error?.description ?: "Error desconocido"
+                                        Log.e("SmartVoltMap", "Error en WebView: code=$code, desc=$desc")
                                     }
                                 }
 
@@ -169,14 +180,6 @@ fun MapaScreen(
                                             "${m.message()} (${m.sourceId()}:${m.lineNumber()})",
                                         )
                                         return true
-                                    }
-
-                                    override fun onReceivedError(
-                                        view: WebView?,
-                                       ErrorCode: net.WebViewClient.ErrorRequestErrorCode,
-                                        error: net.WebViewClient.WebResourceError?,
-                                    ) {
-                                        Log.e("SmartVoltMap", "Error en WebView: $errorCode, ${error?.description}")
                                     }
                                 }
 

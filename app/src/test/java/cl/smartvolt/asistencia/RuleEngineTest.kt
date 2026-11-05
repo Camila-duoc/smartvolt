@@ -57,8 +57,8 @@ class RuleEngineTest {
     @Test fun entrada_duplicada_se_rechaza() =
         assertEquals(EstadoMarca.RECHAZADA, engine.evaluar(evidencia(tipo = TipoMarca.IN, ultima = TipoMarca.IN)).estado)
 
-    @Test fun modo_desarrollador_deja_la_marca_sospechosa() {
+    @Test fun modo_desarrollador_no_afecta_el_veredicto() {
         val v = engine.evaluar(evidencia(sistema = EstadoSistema(modoDesarrollador = true, horaAutomatica = true)))
-        assertEquals(EstadoMarca.SOSPECHOSA, v.estado)
+        assertEquals(EstadoMarca.VALIDA, v.estado)
     }
 }

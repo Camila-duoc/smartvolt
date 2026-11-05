@@ -10,7 +10,7 @@ interface LocationProvider {
 
 interface BleScanner {
     /** Escanea durante [ventanaMs] y devuelve el RSSI promedio por UUID. [autorizados] solo lo usa el simulador. */
-    suspend fun escanear(autorizados: List<BeaconAutorizado>, ventanaMs: Long = 4_000): List<LecturaBle>
+    suspend fun escanear(autorizados: List<BeaconAutorizado>, ventanaMs: Long = 6_000): List<LecturaBle>
 }
 
 interface SystemStateProvider {
