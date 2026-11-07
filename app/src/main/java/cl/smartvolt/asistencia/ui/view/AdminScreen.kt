@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.admin
+package cl.smartvolt.asistencia.ui.view
 
 import android.content.Context
 import android.content.Intent
@@ -29,10 +29,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
-import cl.smartvolt.asistencia.domain.model.EstadoMarca
+import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.domain.usecase.ExportarReportePdf
 import cl.smartvolt.asistencia.ui.navigation.LocalNavController
 import cl.smartvolt.asistencia.ui.theme.*
+import cl.smartvolt.asistencia.viewmodel.AdminViewModel
+import cl.smartvolt.asistencia.viewmodel.AlertaResumen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

@@ -1,7 +1,7 @@
 package cl.smartvolt.asistencia.domain.calendario
 
-import cl.smartvolt.asistencia.data.local.MarcaEntity
-import cl.smartvolt.asistencia.domain.model.EstadoMarca
+import cl.smartvolt.asistencia.modelo.MarcaEntity
+import cl.smartvolt.asistencia.modelo.EstadoMarca
 import java.time.LocalDate
 import java.time.YearMonth
 

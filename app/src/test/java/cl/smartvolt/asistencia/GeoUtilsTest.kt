@@ -1,7 +1,7 @@
 package cl.smartvolt.asistencia
 
 import cl.smartvolt.asistencia.domain.geo.GeoUtils
-import cl.smartvolt.asistencia.domain.model.*
+import cl.smartvolt.asistencia.modelo.*
 import org.junit.Assert.*
 import org.junit.Test
 

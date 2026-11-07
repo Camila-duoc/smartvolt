@@ -1,6 +1,6 @@
 package cl.smartvolt.asistencia.sensors
 
-import cl.smartvolt.asistencia.domain.model.*
+import cl.smartvolt.asistencia.modelo.*
 
 /** Los sensores se abstraen para poder inyectar versiones simuladas (demo) o reales (campo). */
 interface LocationProvider {

@@ -1,16 +1,15 @@
-package cl.smartvolt.asistencia.ui.horasextra
+package cl.smartvolt.asistencia.ui.view
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import cl.smartvolt.asistencia.data.local.HoraExtraEntity
-import cl.smartvolt.asistencia.domain.model.EstadoHoraExtra
+import cl.smartvolt.asistencia.modelo.EstadoHoraExtra
+import cl.smartvolt.asistencia.modelo.HoraExtraEntity
+import cl.smartvolt.asistencia.ui.compoments.ResumenCard
 import cl.smartvolt.asistencia.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -79,24 +78,6 @@ fun ResumenHorasExtraContent(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun RowScope.ResumenCard(titulo: String, cantidad: String, horas: String, color: Color) {
-    Card(
-        modifier = Modifier.weight(1f),
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f))
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(titulo, style = MaterialTheme.typography.bodySmall, color = color)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(cantidad, style = MaterialTheme.typography.headlineSmall, color = color)
-            Text(horas, style = MaterialTheme.typography.bodyMedium, color = color)
         }
     }
 }

@@ -1,10 +1,10 @@
-package cl.smartvolt.asistencia.data.local
+package cl.smartvolt.asistencia.modelo
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import cl.smartvolt.asistencia.domain.model.*
+import cl.smartvolt.asistencia.modelo.*
 
 @Entity(tableName = "usuarios")
 data class UsuarioEntity(

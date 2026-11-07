@@ -1,5 +1,10 @@
 package cl.smartvolt.asistencia.data.remote
 
+import cl.smartvolt.asistencia.modelo.ConfiguracionDto
+import cl.smartvolt.asistencia.modelo.LoteRequest
+import cl.smartvolt.asistencia.modelo.LoteResponse
+import cl.smartvolt.asistencia.modelo.ResultadoMarcaDto
+
 /**
  * API simulada para el flavor "demo": no hay backend, así que acepta todas las marcas
  * del lote y devuelve una configuración vacía (se conserva la semilla local).

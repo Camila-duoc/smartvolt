@@ -1,15 +1,15 @@
 package cl.smartvolt.asistencia
 
-import cl.smartvolt.asistencia.data.local.FaenaEntity
-import cl.smartvolt.asistencia.data.local.UsuarioEntity
+import cl.smartvolt.asistencia.modelo.FaenaEntity
+import cl.smartvolt.asistencia.modelo.UsuarioEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
-import cl.smartvolt.asistencia.domain.model.LatLon
-import cl.smartvolt.asistencia.domain.model.Perimetro
-import cl.smartvolt.asistencia.domain.model.Rol
-import cl.smartvolt.asistencia.domain.model.TipoPerimetro
-import cl.smartvolt.asistencia.domain.model.UbicacionCompartida
-import cl.smartvolt.asistencia.ui.login.SessionState
-import cl.smartvolt.asistencia.ui.mapa.MapaViewModel
+import cl.smartvolt.asistencia.modelo.LatLon
+import cl.smartvolt.asistencia.modelo.Perimetro
+import cl.smartvolt.asistencia.modelo.Rol
+import cl.smartvolt.asistencia.modelo.TipoPerimetro
+import cl.smartvolt.asistencia.modelo.UbicacionCompartida
+import cl.smartvolt.asistencia.viewmodel.SessionState
+import cl.smartvolt.asistencia.viewmodel.MapaViewModel
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

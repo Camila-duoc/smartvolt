@@ -1,8 +1,8 @@
 package cl.smartvolt.asistencia.domain.geo
 
-import cl.smartvolt.asistencia.domain.model.LatLon
-import cl.smartvolt.asistencia.domain.model.Perimetro
-import cl.smartvolt.asistencia.domain.model.TipoPerimetro
+import cl.smartvolt.asistencia.modelo.LatLon
+import cl.smartvolt.asistencia.modelo.Perimetro
+import cl.smartvolt.asistencia.modelo.TipoPerimetro
 import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.min

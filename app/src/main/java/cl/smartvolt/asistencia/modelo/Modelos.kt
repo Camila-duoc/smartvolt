@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.domain.model
+package cl.smartvolt.asistencia.modelo
 
 enum class Rol { ADMIN, CAPATAZ, OPERARIO }
 enum class TipoMarca { IN, OUT }

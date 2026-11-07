@@ -1,6 +1,6 @@
 package cl.smartvolt.asistencia.domain.usecase
 
-import cl.smartvolt.asistencia.data.local.MarcaEntity
+import cl.smartvolt.asistencia.modelo.MarcaEntity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

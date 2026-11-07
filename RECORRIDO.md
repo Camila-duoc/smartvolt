@@ -54,16 +54,16 @@ Este es el flujo que más vale la pena entender, porque toca casi todo el proyec
 
 ### Paso 1 — Login
 
-1. `ui/login/LoginScreen.kt` muestra el formulario.
-2. `LoginViewModel` llama a `ValidarLoginUseCase.kt` para validar formato de código y PIN.
+1. `ui/view/LoginScreen.kt` muestra el formulario.
+2. `viewmodel/LoginViewModel.kt` llama a `ValidarLoginUseCase.kt` para validar formato de código y PIN.
 3. Si el formato es correcto, consulta `AttendanceRepository.usuario(id)`.
 4. La implementación real (`RoomAttendanceRepository` en `data/repository/AttendanceRepository.kt`) lee de Room (`ConfigDao.usuario`).
-5. El usuario queda en `SessionState` (definido en `LoginScreen.kt`), que es un singleton de Hilt.
-6. `AppNav.kt` redirige según el `Rol` (`Models.kt`).
+5. El usuario queda en `SessionState` (definido en `viewmodel/LoginViewModel.kt`), que es un singleton de Hilt.
+6. `AppNav.kt` redirige según el `Rol` (`Modelos.kt`).
 
 ### Paso 2 — Marcar entrada o salida
 
-1. `ui/checkin/CheckInScreen.kt` tiene los botones y pide permisos de ubicación/Bluetooth/notificaciones.
+1. `ui/view/CheckInScreen.kt` tiene los botones y pide permisos de ubicación/Bluetooth/notificaciones.
 2. `CheckInViewModel.marcar(tipo)` llama a `domain/usecase/RegistrarMarcaUseCase.kt`.
 3. `RegistrarMarcaUseCase` pide al repositorio:
    - perímetro de la faena (`perimetro`),
@@ -75,7 +75,7 @@ Este es el flujo que más vale la pena entender, porque toca casi todo el proyec
    - `BleScanner` (beacons),
    - `SystemStateProvider` (modo desarrollador y hora automática).
    - En `demo` se usan `sensors/FakeSensors.kt`; en `campo`, `sensors/RealSensors.kt`.
-5. Arma una `Evidencia` (`domain/model/Models.kt`) y la pasa a `domain/antifraude/RuleEngine.kt`.
+5. Arma una `Evidencia` (`modelo/Modelos.kt`) y la pasa a `domain/antifraude/RuleEngine.kt`.
 6. `RuleEngine` ejecuta las reglas de `domain/antifraude/Rules.kt` y devuelve un `Veredicto`:
    - `RECHAZADA` si falla una regla bloqueante,
    - `SOSPECHOSA` si falla una advertencia,
@@ -92,31 +92,31 @@ Este es el flujo que más vale la pena entender, porque toca casi todo el proyec
 ### Paso 3 — Sincronización
 
 1. `SyncWorker.doWork()` llama a `AttendanceRepository.sincronizarMarcas()`.
-2. El repositorio toma las marcas `PENDIENTE`/`ERROR` (`MarcaDao.pendientes`), arma los DTOs (`data/remote/Api.kt`) y llama a `ApiService.enviarLote`.
+2. El repositorio toma las marcas `PENDIENTE`/`ERROR` (`MarcaDao.pendientes`), arma los DTOs (`modelo/Dtos.kt`) y llama a `ApiService.enviarLote`.
 3. En `demo` responde `data/remote/FakeApi.kt`; en `campo`, Retrofit.
 4. Según la respuesta, actualiza el estado de sincronización a `ENVIADA` o `ERROR`.
 5. Si envió algo, `Notificaciones.sincronizacionCompletada` avisa.
 
 ### Paso 4 — Visación del capataz
 
-1. `ui/foreman/ForemanScreen.kt` muestra la última marca de cada operario de la faena.
+1. `ui/view/ForemanScreen.kt` muestra la última marca de cada operario de la faena.
 2. `ForemanViewModel` combina `repo.marcasDeFaena` y `repo.visaciones`.
-3. Al aprobar/rechazar, llama a `repo.visar(...)`, que guarda en `VisacionEntity` (`data/local/Entities.kt`).
-4. `ui/visacion/DetalleVisacionScreen.kt` + `DetalleVisacionViewModel.kt` muestran el detalle en solo lectura.
+3. Al aprobar/rechazar, llama a `repo.visar(...)`, que guarda en `VisacionEntity` (`modelo/Entidades.kt`).
+4. `ui/view/DetalleVisacionScreen.kt` + `DetalleVisacionViewModel.kt` muestran el detalle en solo lectura.
 
 ### Paso 5 — Horas extra
 
-1. `ui/horasextra/HoraExtraScreen.kt` valida horas y motivo con `SolicitarHoraExtraUseCase.kt`.
+1. `ui/view/HoraExtraScreen.kt` valida horas y motivo con `SolicitarHoraExtraUseCase.kt`.
 2. `HoraExtraViewModel.kt` llama al caso de uso, que guarda en `HoraExtraEntity`.
-3. `ui/horasextra/MisHorasExtraScreen.kt` + `MisHorasExtraViewModel.kt` muestran las solicitudes del operario.
-4. `ui/horasextra/AprobarHoraExtraScreen.kt` permite al capataz aprobar o rechazar.
-5. `ui/horasextra/ResumenHorasExtraScreen.kt` es el contenido reutilizable del resumen.
+3. `ui/view/MisHorasExtraScreen.kt` + `MisHorasExtraViewModel.kt` muestran las solicitudes del operario.
+4. `ui/view/AprobarHoraExtraScreen.kt` permite al capataz aprobar o rechazar.
+5. `ui/view/ResumenHorasExtraScreen.kt` es el contenido reutilizable del resumen.
 
 ### Paso 6 — Administración
 
-1. `ui/admin/AdminViewModel.kt` lee todas las marcas y horas extra desde el repositorio.
+1. `viewmodel/AdminViewModel.kt` lee todas las marcas y horas extra desde el repositorio.
 2. Calcula métricas, porcentajes por faena, alertas y verifica la cadena con `HashMarca.verificarCadena`.
-3. `ui/admin/AdminScreen.kt` muestra todo, anima los contadores y permite exportar:
+3. `ui/view/AdminScreen.kt` muestra todo, anima los contadores y permite exportar:
    - CSV con `domain/usecase/ExportarMarcasCsv.kt`,
    - PDF con `domain/usecase/ExportarReportePdf.kt`,
    - y comparte con `FileProvider` (`res/xml/file_paths.xml`).
@@ -148,7 +148,7 @@ Lee esto solo para entender con qué está construido. No lo memorices.
 | `app/src/debug/AndroidManifest.xml` | Permite HTTP claro solo en debug. |
 | `SmartVoltApp.kt` | `@HiltAndroidApp`, canales de notificación y configuración de WorkManager. |
 | `MainActivity.kt` | Aplica `SmartVoltTheme` y monta `AppNav`. |
-| `domain/model/Models.kt` | Enums y data classes: `Rol`, `TipoMarca`, `EstadoMarca`, `Evidencia`, `Veredicto`, etc. |
+| `modelo/Modelos.kt` | Enums y data classes: `Rol`, `TipoMarca`, `EstadoMarca`, `Evidencia`, `Veredicto`, etc. |
 | `sensors/Sensors.kt` | Interfaces de sensores, escenarios demo y `DemoState`. |
 
 ### Fase 2 — Reglas de negocio puras (la parte más importante)
@@ -167,9 +167,11 @@ Lee esto solo para entender con qué está construido. No lo memorices.
 
 | Archivo | Qué mirar |
 |---|---|
-| `data/local/Entities.kt` | Las 10 entidades Room y sus relaciones. |
-| `data/local/Daos.kt` | Consultas, migraciones 1→2, 2→3 y 3→4, y `AppDatabase`. |
-| `data/remote/Api.kt` | DTOs y `ApiService` de Retrofit. |
+| `modelo/Entidades.kt` | Las 10 entidades Room y sus relaciones. |
+| `modelo/Daos.kt` | Consultas de configuración, marcas y horas extra. |
+| `modelo/Dtos.kt` | DTOs `@Serializable` de la API y de `seed.json`. |
+| `viewmodel/AppDatabase.kt` | Migraciones 1→2, 2→3 y 3→4, y el singleton `AppDatabase`. |
+| `data/remote/Api.kt` | Interfaz `ApiService` de Retrofit. |
 | `data/remote/FakeApi.kt` | API simulada de `demo`. |
 | `data/repository/AttendanceRepository.kt` | Contrato + implementación Room/Retrofit; guardado transaccional, sync, semilla y horas extra. |
 | `di/AppModule.kt` | Inyección de DB, repositorio, API y sensores (fake o reales). |
@@ -196,24 +198,28 @@ Lee esto solo para entender con qué está construido. No lo memorices.
 | Archivo | Qué mirar |
 |---|---|
 | `ui/theme/Theme.kt` | Material 3: colores claro/oscuro, tipografía y formas. |
+| `ui/compoments/ResumenCard.kt` | Tarjeta compartida de los resúmenes de horas extra. |
 | `ui/navigation/AppNav.kt` | Rutas, transiciones y `LocalNavController`. |
-| `ui/login/LoginScreen.kt` | `SessionState`, `LoginViewModel` y formulario con validación por campo. |
-| `ui/checkin/CheckInScreen.kt` | `CheckInViewModel`, permisos, botones de marca y resultado animado. |
-| `ui/foreman/ForemanScreen.kt` | `ForemanViewModel`, panel de presencia y visación. |
-| `ui/visacion/DetalleVisacionScreen.kt` | Detalle de una marca y su visación. |
-| `ui/visacion/DetalleVisacionViewModel.kt` | Carga marca + visación. |
-| `ui/calendario/CalendarioScreen.kt` | Historial por rango. |
-| `ui/calendario/CalendarioViewModel.kt` | Agrupación por fecha según rol. |
-| `ui/mapa/MapaScreen.kt` | Mapa Mapbox; ADMIN elige y guarda la ubicación, los demás roles solo la consultan. |
-| `ui/mapa/MapaViewModel.kt` | Ubicación compartida (o centro de la faena) y permiso de edición solo para ADMIN. |
-| `ui/horasextra/HoraExtraScreen.kt` | Formulario de horas extra con íconos y errores por campo. |
-| `ui/horasextra/HoraExtraViewModel.kt` | Estado y acciones de horas extra. |
-| `ui/horasextra/AprobarHoraExtraScreen.kt` | Supervisión de solicitudes. |
-| `ui/horasextra/MisHorasExtraScreen.kt` | Solicitudes del operario. |
-| `ui/horasextra/MisHorasExtraViewModel.kt` | Carga de las solicitudes propias. |
-| `ui/horasextra/ResumenHorasExtraScreen.kt` | Contenido reutilizable del resumen. |
-| `ui/admin/AdminScreen.kt` | Panel admin, métricas animadas, alertas, integridad y exportación. |
-| `ui/admin/AdminViewModel.kt` | Cálculo de métricas, alertas y líneas del reporte. |
+| `ui/view/LoginScreen.kt` | Formulario con validación por campo. |
+| `viewmodel/LoginViewModel.kt` | `SessionState`, `LoginViewModel` y lógica de autenticación. |
+| `ui/view/CheckInScreen.kt` | Permisos, botones de marca y resultado animado. |
+| `viewmodel/CheckInViewModel.kt` | `CheckInViewModel`: marca, veredicto y sincronización. |
+| `ui/view/ForemanScreen.kt` | Panel de presencia y visación. |
+| `viewmodel/ForemanViewModel.kt` | `ForemanViewModel`: presencia por faena y visación. |
+| `ui/view/DetalleVisacionScreen.kt` | Detalle de una marca y su visación. |
+| `viewmodel/DetalleVisacionViewModel.kt` | Carga marca + visación. |
+| `ui/view/CalendarioScreen.kt` | Historial por rango. |
+| `viewmodel/CalendarioViewModel.kt` | Agrupación por fecha según rol. |
+| `ui/view/MapaScreen.kt` | Mapa Mapbox; ADMIN elige y guarda la ubicación, los demás roles solo la consultan. |
+| `viewmodel/MapaViewModel.kt` | Ubicación compartida (o centro de la faena) y permiso de edición solo para ADMIN. |
+| `ui/view/HoraExtraScreen.kt` | Formulario de horas extra con íconos y errores por campo. |
+| `viewmodel/HoraExtraViewModel.kt` | Estado y acciones de horas extra. |
+| `ui/view/AprobarHoraExtraScreen.kt` | Supervisión de solicitudes. |
+| `ui/view/MisHorasExtraScreen.kt` | Solicitudes del operario. |
+| `viewmodel/MisHorasExtraViewModel.kt` | Carga de las solicitudes propias. |
+| `ui/view/ResumenHorasExtraScreen.kt` | Contenido reutilizable del resumen. |
+| `ui/view/AdminScreen.kt` | Panel admin, métricas animadas, alertas, integridad y exportación. |
+| `viewmodel/AdminViewModel.kt` | Cálculo de métricas, alertas y líneas del reporte. |
 | `app/src/test/.../HoraExtraViewModelTest.kt` | Estado del ViewModel de horas extra. |
 | `app/src/test/.../AdminViewModelTest.kt` | Métricas del panel admin. |
 | `app/src/test/.../AdminReporteTest.kt` | Líneas del reporte. |
@@ -247,13 +253,13 @@ Esta es la parte más útil para una defensa: casi ningún cambio toca un solo a
 |---|---|
 | Cambiar el máximo de horas o el mínimo del motivo | `SolicitarHoraExtraUseCase.kt` (constantes y validadores), `HoraExtraScreen.kt` (textos), `SolicitarHoraExtraUseCaseTest.kt`. |
 | Cambiar el formato del código o el largo del PIN | `ValidarLoginUseCase.kt`, `LoginScreen.kt` (usa `LARGO_PIN`), `ValidarLoginUseCaseTest.kt`, `seed.json` si cambian los códigos. |
-| Que el botón de login se comporte distinto | `LoginScreen.kt` (estado de UI), `LoginViewModel` dentro del mismo archivo. |
+| Que el botón de login se comporte distinto | `ui/view/LoginScreen.kt` (estado de UI), `viewmodel/LoginViewModel.kt` (validación y sesión). |
 
 ### Cambiar o agregar reglas antifraude
 
 | Si piden... | Archivos |
 |---|---|
-| Agregar una regla nueva | `Rules.kt` (nueva clase), `RuleEngine.kt` (agregarla a `porDefecto`), `RuleEngineTest.kt`. Si necesita un dato nuevo: `Models.kt`, `RegistrarMarcaUseCase.kt` y `Sensors.kt`/`RealSensors.kt`. |
+| Agregar una regla nueva | `Rules.kt` (nueva clase), `RuleEngine.kt` (agregarla a `porDefecto`), `RuleEngineTest.kt`. Si necesita un dato nuevo: `Modelos.kt`, `RegistrarMarcaUseCase.kt` y `Sensors.kt`/`RealSensors.kt`. |
 | Hacer bloqueante una regla de advertencia | `Rules.kt` (cambiar `Severidad`), `RuleEngineTest.kt`. |
 | Cambiar el radio o el margen de la geocerca | `Rules.kt` (`margenMaxM`), `GeoUtils.kt`, `seed.json` (radio), `GeoUtilsTest.kt` / `RuleEngineTest.kt`. |
 | Cambiar la secuencia entrada/salida | `Rules.kt` (`SequenceRule`), `RuleEngineTest.kt`. |
@@ -262,10 +268,10 @@ Esta es la parte más útil para una defensa: casi ningún cambio toca un solo a
 
 | Si piden... | Archivos |
 |---|---|
-| Agregar un campo a la marca (batería, modelo, etc.) | `Entities.kt`, `Daos.kt` (subir versión y crear migración 4→5), `Models.kt` (`Evidencia`), `RegistrarMarcaUseCase.kt`, `HashMarca.kt` si el campo entra al hash, `Api.kt` (`MarcaDto`), `AttendanceRepository.kt`, `ExportarMarcasCsv.kt`, `DetalleVisacionScreen.kt` y tests. |
-| Agregar una tabla nueva | `Entities.kt`, `Daos.kt` (DAO + migración + versión), `AppModule.kt` si se expone el DAO, `AttendanceRepository.kt` si se usa desde la UI. |
-| Cambiar los datos de la semilla | `assets/seed.json`; si cambia la estructura, `Api.kt` (`SeedDto`) y `AttendanceRepository.kt` (`cargarSemillaSiVacio`). |
-| Cifrar la base (SQLCipher) | `app/build.gradle.kts` (dependencia), `AppModule.kt` (constructor de la DB), `Daos.kt` si cambia la inicialización. |
+| Agregar un campo a la marca (batería, modelo, etc.) | `modelo/Entidades.kt`, `viewmodel/AppDatabase.kt` (subir versión y crear migración 4→5), `modelo/Modelos.kt` (`Evidencia`), `RegistrarMarcaUseCase.kt`, `HashMarca.kt` si el campo entra al hash, `modelo/Dtos.kt` (`MarcaDto`), `AttendanceRepository.kt`, `ExportarMarcasCsv.kt`, `ui/view/DetalleVisacionScreen.kt` y tests. |
+| Agregar una tabla nueva | `modelo/Entidades.kt`, `viewmodel/AppDatabase.kt` (DAO + migración + versión), `AppModule.kt` si se expone el DAO, `AttendanceRepository.kt` si se usa desde la UI. |
+| Cambiar los datos de la semilla | `assets/seed.json`; si cambia la estructura, `modelo/Dtos.kt` (`SeedDto`) y `AttendanceRepository.kt` (`cargarSemillaSiVacio`). |
+| Cifrar la base (SQLCipher) | `app/build.gradle.kts` (dependencia), `AppModule.kt` (constructor de la DB), `viewmodel/AppDatabase.kt` si cambia la inicialización. |
 
 ### Cambiar la interfaz
 
@@ -275,15 +281,15 @@ Esta es la parte más útil para una defensa: casi ningún cambio toca un solo a
 | Agregar una pantalla o ruta | `ui/navigation/AppNav.kt`, nueva `Screen.kt` + `ViewModel.kt`, botón de acceso en `CheckInScreen.kt` / `ForemanScreen.kt` / `AdminScreen.kt`, `strings.xml` si hay textos nuevos. |
 | Cambiar animaciones o transiciones | `AppNav.kt` (transiciones), `CheckInScreen.kt` (resultado/carga), `AdminScreen.kt` (contadores/alertas), `HoraExtraScreen.kt` (éxito/error). |
 | Cambiar textos visibles | La pantalla correspondiente y `res/values/strings.xml`. |
-| Cambiar el mapa | `ui/mapa/MapaScreen.kt`, `ui/mapa/MapaViewModel.kt`, `res/values/mapbox_access_token.xml`. |
+| Cambiar el mapa | `ui/view/MapaScreen.kt`, `viewmodel/MapaViewModel.kt`, `res/values/mapbox_access_token.xml`. |
 
 ### Cambiar roles, login o sesión
 
 | Si piden... | Archivos |
 |---|---|
-| Agregar un rol nuevo | `Models.kt` (`Rol`), `AppNav.kt` (destino), `LoginScreen.kt` (redirección), `HoraExtraViewModel.kt`, `CalendarioViewModel.kt`, `AdminViewModel.kt`, `ForemanScreen.kt`, `seed.json` y tests. |
-| Autenticación real (PIN por usuario o biometría) | `ValidarLoginUseCase.kt`, `LoginScreen.kt` (ViewModel), `AttendanceRepository.kt` (`usuario`), `Entities.kt` (campo de hash de PIN + migración), `seed.json`, posiblemente `Api.kt`. |
-| Que la sesión persista al cerrar la app | `LoginScreen.kt` (`SessionState`), `MainActivity.kt` o `SmartVoltApp.kt` para cargarla, y `AttendanceRepository.kt` si se guarda en Room/DataStore. |
+| Agregar un rol nuevo | `Modelos.kt` (`Rol`), `AppNav.kt` (destino), `viewmodel/LoginViewModel.kt` (redirección), `HoraExtraViewModel.kt`, `CalendarioViewModel.kt`, `AdminViewModel.kt`, `ForemanScreen.kt`, `seed.json` y tests. |
+| Autenticación real (PIN por usuario o biometría) | `ValidarLoginUseCase.kt`, `viewmodel/LoginViewModel.kt`, `AttendanceRepository.kt` (`usuario`), `modelo/Entidades.kt` (campo de hash de PIN + migración), `seed.json`, posiblemente `modelo/Dtos.kt`. |
+| Que la sesión persista al cerrar la app | `viewmodel/LoginViewModel.kt` (`SessionState`), `MainActivity.kt` o `SmartVoltApp.kt` para cargarla, y `AttendanceRepository.kt` si se guarda en Room/DataStore. |
 
 ### Cambiar sincronización, notificaciones o exportación
 
@@ -319,13 +325,13 @@ Si te preguntan “¿dónde está…?”:
 | Flujo de una marca | `domain/usecase/RegistrarMarcaUseCase.kt` |
 | Validación de login | `domain/usecase/ValidarLoginUseCase.kt` |
 | Validación de horas extra | `domain/usecase/SolicitarHoraExtraUseCase.kt` |
-| Persistencia | `data/local/Entities.kt`, `Daos.kt`, `AttendanceRepository.kt` |
+| Persistencia | `modelo/Entidades.kt`, `modelo/Daos.kt`, `viewmodel/AppDatabase.kt`, `AttendanceRepository.kt` |
 | Sensores reales/simulados | `sensors/RealSensors.kt`, `FakeSensors.kt` |
 | Sincronización | `sync/SyncWorker.kt` |
 | Notificaciones | `notifications/Notificaciones.kt` |
 | Navegación | `ui/navigation/AppNav.kt` |
 | Tema Material 3 | `ui/theme/Theme.kt` |
-| Estado de pantallas | Los `*ViewModel.kt` de cada carpeta `ui/` |
+| Estado de pantallas | Los `*ViewModel.kt` de `viewmodel/` |
 
 Frase para cerrar:
 

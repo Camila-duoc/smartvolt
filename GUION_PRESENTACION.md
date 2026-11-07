@@ -65,10 +65,10 @@
 5. Opcional: cambiar el teléfono a modo oscuro.
 
 **Código:**
-- `ui/theme/Theme.kt` → colores (líneas 18–28), tipografía y formas (72–143), tema (145–154).
-- `ui/navigation/AppNav.kt` → rutas y transiciones (33–93).
-- `ui/checkin/CheckInScreen.kt` → barra superior y botones grandes (121–145).
-- `ui/calendario/CalendarioScreen.kt` → grilla mensual, leyenda y detalle del día (51–203).
+- `ui/theme/Theme.kt` → colores (19–28), tipografía y formas (73–143), tema (146–154).
+- `ui/navigation/AppNav.kt` → rutas y transiciones (34–93).
+- `ui/view/CheckInScreen.kt` → barra superior y botones grandes (69–93).
+- `ui/view/CalendarioScreen.kt` → grilla mensual, leyenda y detalle del día (52–204, 245–384).
 
 **Idea fuerza:** “La jerarquía visual y la navegación coherente reducen la carga cognitiva; el usuario siempre sabe dónde está y cuál es la acción principal.”
 
@@ -98,8 +98,9 @@
 > “El login también tiene un error general de autenticación: ‘Código o PIN incorrecto’, separado de los errores de formato de cada campo.”
 
 **Código:**
-- `ui/login/LoginScreen.kt` → estado `LoginUi` (45–51), validación reactiva (106–114), campos e íconos (125–171), error general animado (173–195), botón (198–209).
-- `ui/horasextra/HoraExtraScreen.kt` → validación por campo (55–67), campos (88–129), botón (146–159), éxito/error animados (161–211).
+- `viewmodel/LoginViewModel.kt` → estado `LoginUi` (26–32) y validación (46–49).
+- `ui/view/LoginScreen.kt` → validación reactiva (36), campos e íconos (55–101), error general animado (103–125), botón (128–139).
+- `ui/view/HoraExtraScreen.kt` → validación por campo (56–68), campos (89–130), botón (147–160), éxito/error animados (162–211).
 - `domain/usecase/ValidarLoginUseCase.kt` → reglas (19–42).
 - `domain/usecase/SolicitarHoraExtraUseCase.kt` → reglas (9–47, 50–64).
 
@@ -118,14 +119,15 @@
 
 **Muestra:**
 - Abrir `ValidarLoginUseCase.kt` y señalar la regex y el largo del PIN.
-- Abrir `LoginViewModel` dentro de `LoginScreen.kt` y mostrar `validar()`.
+- Abrir `viewmodel/LoginViewModel.kt` y mostrar `validar()`.
 - Opcional: correr `ValidarLoginUseCaseTest` y `SolicitarHoraExtraUseCaseTest` en verde.
 
 **Código:**
-- `ui/login/LoginScreen.kt` → `LoginViewModel` (53–94) y `LaunchedEffect` (106).
+- `viewmodel/LoginViewModel.kt` → `validar()` (46–49) e `ingresar()` (58–74).
+- `ui/view/LoginScreen.kt` → `LaunchedEffect` (36).
 - `domain/usecase/ValidarLoginUseCase.kt` (19–42).
-- `domain/usecase/SolicitarHoraExtraUseCase.kt` → `validarHorasTexto`, `validarHoras`, `validarMotivo` y revalidación en `invoke` (24–64).
-- `ui/horasextra/HoraExtraViewModel.kt` → estado y llamada al caso de uso (67–85).
+- `domain/usecase/SolicitarHoraExtraUseCase.kt` → `validarHorasTexto`, `validarHoras`, `validarMotivo` y revalidación en `invoke` (24–78).
+- `viewmodel/HoraExtraViewModel.kt` → estado y llamada al caso de uso (67–85).
 - Tests: `app/src/test/java/.../ValidarLoginUseCaseTest.kt`, `SolicitarHoraExtraUseCaseTest.kt`.
 
 **Idea fuerza:** “La UI es tonta y el dominio es testeable. Eso permite cambiar una regla sin tocar la pantalla.”
@@ -150,10 +152,10 @@
 
 **Código:**
 - `ui/navigation/AppNav.kt` (40–49).
-- `ui/checkin/CheckInScreen.kt` → carga, error, veredicto y tarjeta (146–174, 210–219).
-- `ui/login/LoginScreen.kt` (173–195).
-- `ui/horasextra/HoraExtraScreen.kt` (161–211).
-- `ui/admin/AdminScreen.kt` → alertas (203–215) y contadores (292–299).
+- `ui/view/CheckInScreen.kt` → carga, error, veredicto y tarjeta (94–122, 157–167).
+- `ui/view/LoginScreen.kt` (103–125).
+- `ui/view/HoraExtraScreen.kt` (162–211).
+- `ui/view/AdminScreen.kt` → alertas (205–217) y contadores (293–301).
 
 **Idea fuerza:** “Cada animación acompaña un cambio de estado real; ninguna existe solo para llamar la atención.”
 
@@ -162,25 +164,25 @@
 ## 5. Modularidad, separación de responsabilidades y persistencia — 9:00 a 11:15
 
 **Di:**
-> “El proyecto está separado en capas. `ui/` tiene pantallas Compose y ViewModels; `domain/` tiene modelos, reglas, geometría, hash y casos de uso; `data/` tiene Room, Retrofit/API simulada y el repositorio; `di/` configura Hilt; `sensors/` abstrae GPS y BLE; `sync/` tiene WorkManager; `notifications/` los canales locales.”
+> “El proyecto está separado en capas. `ui/view/` tiene las pantallas Compose y `ui/compoments/` los componentes reutilizables; `viewmodel/` tiene los ViewModels y la base Room; `modelo/` tiene modelos, entidades y DAOs; `domain/` tiene reglas, geometría, hash y casos de uso; `data/` tiene Retrofit/API simulada y el repositorio; `di/` configura Hilt; `sensors/` abstrae GPS y BLE; `sync/` tiene WorkManager; `notifications/` los canales locales.”
 
 > “La UI no conoce Room ni Retrofit. Habla con el ViewModel, el ViewModel con el repositorio y el repositorio con los DAO o la API. Hilt inyecta las implementaciones. Los flavors `demo` y `campo` deciden si los sensores y la API son simulados o reales, sin cambiar las pantallas.”
 
 > “Room es la fuente de verdad local: base `smartvolt.db`, versión 4, 10 entidades y migraciones 1→2, 2→3 y 3→4. La primera vez se carga `assets/seed.json` con faenas, frentes, beacons, usuarios y marcas. Cada marca nueva queda `PENDIENTE`; `SyncWorker` la envía con WorkManager cuando hay red y reintenta con backoff exponencial. Eso es offline-first.”
 
 **Muestra:**
-- Árbol de carpetas `data / domain / ui / di / sensors / sync`.
-- `Daos.kt` → `@Database`, versión 4 y migración 3→4.
+- Árbol de carpetas `modelo / viewmodel / ui / domain / data / di / sensors / sync`.
+- `viewmodel/AppDatabase.kt` → `@Database`, versión 4 y migración 3→4.
 - `AppModule.kt` → cómo se elige GPS/BLE/API real o simulado.
 - `SyncWorker.kt` → restricción de red, reintento y notificación.
 - Demo opcional: modo avión, marcar, ver “Marcas pendientes”; reconectar y ver la notificación de sincronización.
 
 **Código:**
-- `data/local/Entities.kt` → tablas y relaciones.
-- `data/local/Daos.kt` → migraciones (131–180) y base de datos (182–199).
+- `modelo/Entidades.kt` → tablas y relaciones.
+- `viewmodel/AppDatabase.kt` → migraciones (24–72) y base de datos (74–97).
 - `data/repository/AttendanceRepository.kt` → interfaz + implementación Room.
 - `di/AppModule.kt` (26–64).
-- `sync/SyncWorker.kt` (13–41).
+- `sync/SyncWorker.kt` (14–41).
 - `domain/usecase/RegistrarMarcaUseCase.kt` → orquestación de sensores, reglas, hash y persistencia (21–63).
 - Tests: `app/src/test/java/...` (16 archivos, incluidos `RuleEngineTest`, `HashMarcaTest`, `GeoUtilsTest`, `AdminViewModelTest`, `MapaViewModelTest`).
 
@@ -193,10 +195,10 @@
 **Di:**
 > “La app accede a más de dos recursos nativos, y todos se piden en el momento de uso, no todos al abrir la app.”
 
-1. **GPS real:** Fused Location Provider con respaldo de `LocationManager`. Se pide `ACCESS_FINE_LOCATION` antes de marcar. Código: `sensors/RealSensors.kt` (41–112) y `ui/checkin/CheckInScreen.kt` (91–118).
-2. **Bluetooth LE:** escaneo de balizas iBeacon y RSSI. Se pide `BLUETOOTH_SCAN` con `neverForLocation`. Código: `sensors/RealSensors.kt` (124–147) y `AndroidManifest.xml` (9–13).
-3. **Notificaciones locales:** canales de “alertas” y “sincronización”; aviso de marca sospechosa y de sync completada. Se pide `POST_NOTIFICATIONS` en Android 13+. Código: `notifications/Notificaciones.kt` (29–116).
-4. **Archivos y compartir:** exportación CSV/PDF con `FileProvider` y el selector de apps del sistema. Código: `ui/admin/AdminScreen.kt` (56–82, 323–361), `res/xml/file_paths.xml` y el provider del manifiesto (49–57).
+1. **GPS real:** Fused Location Provider con respaldo de `LocationManager`. Se pide `ACCESS_FINE_LOCATION` antes de marcar. Código: `sensors/RealSensors.kt` (41–112) y `ui/view/CheckInScreen.kt` (49–65).
+2. **Bluetooth LE:** escaneo de balizas iBeacon y RSSI. Se pide `BLUETOOTH_SCAN` con `neverForLocation`. Código: `sensors/RealSensors.kt` (125–147) y `AndroidManifest.xml` (9–13).
+3. **Notificaciones locales:** canales de “alertas” y “sincronización”; aviso de marca sospechosa y de sync completada. Se pide `POST_NOTIFICATIONS` en Android 13+. Código: `notifications/Notificaciones.kt` (30–116).
+4. **Archivos y compartir:** exportación CSV/PDF con `FileProvider` y el selector de apps del sistema. Código: `ui/view/AdminScreen.kt` (57–84, 325–362), `res/xml/file_paths.xml` y el provider del manifiesto (49–57).
 5. **Mapbox:** SDK de mapas para mostrar la faena y la ubicación compartida.
 
 **Di:**
@@ -256,13 +258,13 @@
 
 | Ítem de la pauta | Archivo principal | Líneas |
 |---|---|---|
-| Interfaz, jerarquía y navegación | `ui/theme/Theme.kt`, `ui/navigation/AppNav.kt` | 18–154, 33–93 |
-| Formularios y validación visual | `ui/login/LoginScreen.kt`, `ui/horasextra/HoraExtraScreen.kt` | 45–209, 55–211 |
-| Validación centralizada | `domain/usecase/ValidarLoginUseCase.kt`, `SolicitarHoraExtraUseCase.kt` | 19–42, 9–64 |
-| Estado reactivo | `LoginViewModel` en `LoginScreen.kt`, `HoraExtraViewModel.kt` | 53–94, 67–85 |
-| Animaciones | `AppNav.kt`, `CheckInScreen.kt`, `AdminScreen.kt` | 40–49, 146–174, 203–299 |
-| Modularidad y persistencia | `data/local/Entities.kt`, `Daos.kt`, `AppModule.kt`, `SyncWorker.kt` | 131–199, 26–64, 13–41 |
-| Recursos del dispositivo | `sensors/RealSensors.kt`, `notifications/Notificaciones.kt`, `AndroidManifest.xml` | 41–147, 29–116 |
+| Interfaz, jerarquía y navegación | `ui/theme/Theme.kt`, `ui/navigation/AppNav.kt` | 19–154, 34–93 |
+| Formularios y validación visual | `ui/view/LoginScreen.kt`, `ui/view/HoraExtraScreen.kt` | 27–139, 40–211 |
+| Validación centralizada | `domain/usecase/ValidarLoginUseCase.kt`, `SolicitarHoraExtraUseCase.kt` | 19–42, 24–78 |
+| Estado reactivo | `viewmodel/LoginViewModel.kt`, `viewmodel/HoraExtraViewModel.kt` | 26–75, 67–85 |
+| Animaciones | `AppNav.kt`, `CheckInScreen.kt`, `AdminScreen.kt` | 40–49, 94–122 y 157–167, 205–301 |
+| Modularidad y persistencia | `modelo/Entidades.kt`, `viewmodel/AppDatabase.kt`, `AppModule.kt`, `SyncWorker.kt` | 1–95, 24–97, 26–64, 14–41 |
+| Recursos del dispositivo | `sensors/RealSensors.kt`, `notifications/Notificaciones.kt`, `AndroidManifest.xml` | 41–147, 30–116 |
 | GitHub / Trello | Repositorio, ramas, PR #1/#2, commits | — |
 
 ---

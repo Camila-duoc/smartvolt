@@ -104,19 +104,24 @@ La pantalla **Ver mapa** usa el **Mapbox Maps SDK** con la extensión **maps-com
 app/src/main/java/cl/smartvolt/asistencia/
 ├── MainActivity.kt, SmartVoltApp.kt
 ├── data/
-│   ├── local/        # Entities.kt, Daos.kt (Room)
-│   ├── remote/       # Api.kt (Retrofit + DTOs), FakeApi.kt (API de demo)
+│   ├── remote/       # Api.kt (Retrofit), FakeApi.kt (API de demo)
 │   └── repository/   # AttendanceRepository + RoomAttendanceRepository
 ├── di/               # AppModule.kt (Hilt)
-├── notifications/    # Notificaciones.kt (canales, marca sospechosa, sync)
 ├── domain/
 │   ├── antifraude/   # Rules.kt, RuleEngine.kt
+│   ├── calendario/   # CalendarioUtils.kt
 │   ├── geo/          # GeoUtils.kt
-│   ├── model/        # Models.kt
 │   └── usecase/      # RegistrarMarca, HashMarca, SolicitarHoraExtra, ValidarLogin, ExportarMarcasCsv, ExportarReportePdf
+├── modelo/           # Modelos.kt, Entidades.kt, Daos.kt, Dtos.kt
+├── notifications/    # Notificaciones.kt (canales, marca sospechosa, sync)
 ├── sensors/          # GPS/BLE reales y simulados
 ├── sync/             # SyncWorker y SyncScheduler
-└── ui/               # login, checkin, foreman, visacion, admin, horasextra, calendario, mapa, navigation, theme
+├── ui/
+│   ├── compoments/   # ResumenCard.kt y piezas compartidas
+│   ├── navigation/   # AppNav.kt
+│   ├── theme/        # Theme.kt
+│   └── view/         # Todas las pantallas Compose
+└── viewmodel/        # AppDatabase.kt y todos los ViewModels
 ```
 
 ## Pruebas

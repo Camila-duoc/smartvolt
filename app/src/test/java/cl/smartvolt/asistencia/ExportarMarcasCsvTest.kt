@@ -1,9 +1,9 @@
 package cl.smartvolt.asistencia
 
-import cl.smartvolt.asistencia.data.local.MarcaEntity
-import cl.smartvolt.asistencia.domain.model.EstadoMarca
-import cl.smartvolt.asistencia.domain.model.SyncEstado
-import cl.smartvolt.asistencia.domain.model.TipoMarca
+import cl.smartvolt.asistencia.modelo.MarcaEntity
+import cl.smartvolt.asistencia.modelo.EstadoMarca
+import cl.smartvolt.asistencia.modelo.SyncEstado
+import cl.smartvolt.asistencia.modelo.TipoMarca
 import cl.smartvolt.asistencia.domain.usecase.ExportarMarcasCsv
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

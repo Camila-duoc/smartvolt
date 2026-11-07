@@ -1,14 +1,14 @@
 package cl.smartvolt.asistencia
 
-import cl.smartvolt.asistencia.data.local.HoraExtraEntity
-import cl.smartvolt.asistencia.data.local.MarcaEntity
+import cl.smartvolt.asistencia.modelo.HoraExtraEntity
+import cl.smartvolt.asistencia.modelo.MarcaEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
-import cl.smartvolt.asistencia.domain.model.EstadoMarca
-import cl.smartvolt.asistencia.domain.model.SyncEstado
-import cl.smartvolt.asistencia.domain.model.TipoMarca
-import cl.smartvolt.asistencia.ui.admin.AdminViewModel
-import cl.smartvolt.asistencia.ui.admin.comoLineas
-import cl.smartvolt.asistencia.ui.login.SessionState
+import cl.smartvolt.asistencia.modelo.EstadoMarca
+import cl.smartvolt.asistencia.modelo.SyncEstado
+import cl.smartvolt.asistencia.modelo.TipoMarca
+import cl.smartvolt.asistencia.viewmodel.AdminViewModel
+import cl.smartvolt.asistencia.viewmodel.comoLineas
+import cl.smartvolt.asistencia.viewmodel.SessionState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle

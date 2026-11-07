@@ -1,6 +1,6 @@
 package cl.smartvolt.asistencia.domain.antifraude
 
-import cl.smartvolt.asistencia.domain.model.*
+import cl.smartvolt.asistencia.modelo.*
 
 /**
  * Pipeline de reglas. Si falla alguna BLOQUEANTE => RECHAZADA.

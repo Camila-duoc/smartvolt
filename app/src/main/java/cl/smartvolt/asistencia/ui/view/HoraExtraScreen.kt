@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.horasextra
+package cl.smartvolt.asistencia.ui.view
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.smartvolt.asistencia.domain.usecase.SolicitarHoraExtraUseCase
 import cl.smartvolt.asistencia.ui.theme.*
+import cl.smartvolt.asistencia.viewmodel.HoraExtraViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 

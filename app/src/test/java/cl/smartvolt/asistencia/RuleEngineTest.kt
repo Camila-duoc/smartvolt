@@ -1,7 +1,7 @@
 package cl.smartvolt.asistencia
 
 import cl.smartvolt.asistencia.domain.antifraude.RuleEngine
-import cl.smartvolt.asistencia.domain.model.*
+import cl.smartvolt.asistencia.modelo.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

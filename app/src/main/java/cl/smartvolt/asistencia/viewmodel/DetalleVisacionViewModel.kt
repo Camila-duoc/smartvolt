@@ -1,9 +1,9 @@
-package cl.smartvolt.asistencia.ui.visacion
+package cl.smartvolt.asistencia.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cl.smartvolt.asistencia.data.local.MarcaEntity
-import cl.smartvolt.asistencia.data.local.VisacionEntity
+import cl.smartvolt.asistencia.modelo.MarcaEntity
+import cl.smartvolt.asistencia.modelo.VisacionEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

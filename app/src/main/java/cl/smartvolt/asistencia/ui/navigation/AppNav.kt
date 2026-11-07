@@ -13,17 +13,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import cl.smartvolt.asistencia.domain.model.Rol
-import cl.smartvolt.asistencia.ui.admin.AdminScreen
-import cl.smartvolt.asistencia.ui.calendario.CalendarioScreen
-import cl.smartvolt.asistencia.ui.checkin.CheckInScreen
-import cl.smartvolt.asistencia.ui.foreman.ForemanScreen
-import cl.smartvolt.asistencia.ui.horasextra.AprobarHoraExtraScreen
-import cl.smartvolt.asistencia.ui.horasextra.HoraExtraScreen
-import cl.smartvolt.asistencia.ui.horasextra.MisHorasExtraScreen
-import cl.smartvolt.asistencia.ui.login.LoginScreen
-import cl.smartvolt.asistencia.ui.mapa.MapaScreen
-import cl.smartvolt.asistencia.ui.visacion.DetalleVisacionScreen
+import cl.smartvolt.asistencia.modelo.Rol
+import cl.smartvolt.asistencia.ui.view.AdminScreen
+import cl.smartvolt.asistencia.ui.view.CalendarioScreen
+import cl.smartvolt.asistencia.ui.view.CheckInScreen
+import cl.smartvolt.asistencia.ui.view.ForemanScreen
+import cl.smartvolt.asistencia.ui.view.AprobarHoraExtraScreen
+import cl.smartvolt.asistencia.ui.view.HoraExtraScreen
+import cl.smartvolt.asistencia.ui.view.MisHorasExtraScreen
+import cl.smartvolt.asistencia.ui.view.LoginScreen
+import cl.smartvolt.asistencia.ui.view.MapaScreen
+import cl.smartvolt.asistencia.ui.view.DetalleVisacionScreen
 
 /** NavController ambiente para que las pantallas puedan navegar sin recibirlo por parámetro. */
 val LocalNavController = staticCompositionLocalOf<NavHostController> {

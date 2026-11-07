@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.calendario
+package cl.smartvolt.asistencia.ui.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,14 +28,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import cl.smartvolt.asistencia.data.local.MarcaEntity
+import cl.smartvolt.asistencia.modelo.MarcaEntity
 import cl.smartvolt.asistencia.domain.calendario.CalendarioUtils
 import cl.smartvolt.asistencia.domain.calendario.EstadoDia
-import cl.smartvolt.asistencia.domain.model.EstadoMarca
-import cl.smartvolt.asistencia.domain.model.Rol
+import cl.smartvolt.asistencia.modelo.EstadoMarca
+import cl.smartvolt.asistencia.modelo.Rol
 import cl.smartvolt.asistencia.ui.theme.Bad
 import cl.smartvolt.asistencia.ui.theme.Ok
 import cl.smartvolt.asistencia.ui.theme.Warn
+import cl.smartvolt.asistencia.viewmodel.CalendarioViewModel
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.YearMonth

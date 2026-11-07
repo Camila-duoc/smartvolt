@@ -1,14 +1,14 @@
-package cl.smartvolt.asistencia.ui.admin
+package cl.smartvolt.asistencia.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
-import cl.smartvolt.asistencia.domain.model.EstadoHoraExtra
-import cl.smartvolt.asistencia.domain.model.EstadoMarca
+import cl.smartvolt.asistencia.modelo.EstadoHoraExtra
+import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.domain.usecase.ExportarMarcasCsv
 import cl.smartvolt.asistencia.domain.usecase.HashMarca
 import cl.smartvolt.asistencia.domain.usecase.MarcaHash
-import cl.smartvolt.asistencia.ui.login.SessionState
+import cl.smartvolt.asistencia.viewmodel.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

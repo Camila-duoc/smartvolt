@@ -1,8 +1,8 @@
 package cl.smartvolt.asistencia
 
-import cl.smartvolt.asistencia.data.local.HoraExtraEntity
+import cl.smartvolt.asistencia.modelo.HoraExtraEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
-import cl.smartvolt.asistencia.domain.model.EstadoHoraExtra
+import cl.smartvolt.asistencia.modelo.EstadoHoraExtra
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -54,11 +54,11 @@ class HoraExtraTest {
         override fun contarPendientes(): Flow<Int> = flowOf(0)
         override suspend fun horasExtraPorRango(desde: Long, hasta: Long): List<HoraExtraEntity> =
             store.values.filter { it.fecha >= desde && it.fecha <= hasta }.toList()
-        override suspend fun resumenHorasExtraUsuario(usuarioId: String): List<cl.smartvolt.asistencia.data.local.ResumenHoraExtraEstado> =
+        override suspend fun resumenHorasExtraUsuario(usuarioId: String): List<cl.smartvolt.asistencia.modelo.ResumenHoraExtraEstado> =
             store.values.filter { it.usuarioId == usuarioId }
                 .groupBy { it.estado }
                 .map { (estado, lista) ->
-                    cl.smartvolt.asistencia.data.local.ResumenHoraExtraEstado(
+                    cl.smartvolt.asistencia.modelo.ResumenHoraExtraEstado(
                         estado = estado,
                         cantidad = lista.size,
                         totalHoras = lista.sumOf { it.horas }

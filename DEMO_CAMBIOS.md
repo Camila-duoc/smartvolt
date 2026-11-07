@@ -11,10 +11,10 @@ Guía para la defensa: si el profesor pide “cambia esto”, aquí está el arc
 1. Deja Android Studio con estas pestañas abiertas:
    - `ui/theme/Theme.kt`
    - `ui/navigation/AppNav.kt`
-   - `ui/checkin/CheckInScreen.kt`
-   - `ui/horasextra/HoraExtraScreen.kt`
+   - `ui/view/CheckInScreen.kt`
+   - `ui/view/HoraExtraScreen.kt`
    - `domain/usecase/SolicitarHoraExtraUseCase.kt`
-   - `ui/mapa/MapaScreen.kt`
+   - `ui/view/MapaScreen.kt`
 2. Confirma que la variante sea **`demoDebug`**.
 3. Ten un punto de retorno:
    - **Opción fácil:** clic derecho en cada archivo → **Local History → Show History** (Android Studio guarda versiones).
@@ -181,9 +181,9 @@ popExitTransition = {
 
 ## 7. Agrandar o renombrar los botones de marcaje (10 segundos)
 
-**Archivo:** `ui/checkin/CheckInScreen.kt`
+**Archivo:** `ui/view/CheckInScreen.kt`
 
-**Líneas 142–145:**
+**Líneas 90–93:**
 ```kotlin
 Button(onClick = { vm.marcar(TipoMarca.IN) }, enabled = !ui.cargando && !sinPermisos,
     colors = ButtonDefaults.buttonColors(containerColor = Ok), modifier = Modifier.fillMaxWidth().height(88.dp)) { Text("MARCAR ENTRADA") }
@@ -236,19 +236,19 @@ const val MIN_MOTIVO = 20
 **Importante:** en este proyecto **casi todos los textos están escritos directamente en las pantallas Compose**. `res/values/strings.xml` solo contiene `app_name`.
 
 **Ejemplos:**
-- Título del login: `ui/login/LoginScreen.kt`, línea 121:
+- Título del login: `ui/view/LoginScreen.kt`, línea 51:
   ```kotlin
   Text("Smart-Volt Asistencia", style = MaterialTheme.typography.headlineMedium)
   ```
-- Subtítulo del login: línea 122:
+- Subtítulo del login: línea 52:
   ```kotlin
   Text("Datos ficticios · uso académico", style = MaterialTheme.typography.bodySmall)
   ```
-- Título de marcar: `ui/checkin/CheckInScreen.kt`, línea 123:
+- Título de marcar: `ui/view/CheckInScreen.kt`, línea 71:
   ```kotlin
   title = { Text("Marcar asistencia · ${vm.usuarioId}") }
   ```
-- Título de horas extra: `ui/horasextra/HoraExtraScreen.kt`, línea 72:
+- Título de horas extra: `ui/view/HoraExtraScreen.kt`, línea 73:
   ```kotlin
   title = { Text("Solicitar horas extra") }
   ```
@@ -263,7 +263,7 @@ const val MIN_MOTIVO = 20
 
 ## 10. Cambiar el zoom del mapa (10 segundos)
 
-**Archivo:** `ui/mapa/MapaScreen.kt`
+**Archivo:** `ui/view/MapaScreen.kt`
 
 **Línea 123:**
 ```kotlin
@@ -290,9 +290,9 @@ zoom(18.0)   // más cerca
 
 ## 11. Cambiar los colores del calendario (10 segundos)
 
-**Archivo:** `ui/calendario/CalendarioScreen.kt`
+**Archivo:** `ui/view/CalendarioScreen.kt`
 
-**Líneas 386–391:**
+**Líneas 387–392:**
 ```kotlin
 private fun colorDeEstado(estado: EstadoDia): Color = when (estado) {
     EstadoDia.SIN_MARCAS -> MaterialTheme.colorScheme.outline
@@ -400,7 +400,7 @@ composable("acerca") {
 }
 ```
 
-**Paso 3:** en `CheckInScreen.kt`, agrega el botón (ya tienes `nav` en la línea 120):
+**Paso 3:** en `CheckInScreen.kt`, agrega el botón (ya tienes `nav` en la línea 68):
 
 ```kotlin
 OutlinedButton(
@@ -419,7 +419,7 @@ OutlinedButton(
 
 **Petición típica:** “agrega un campo de observación”.
 
-En `ui/horasextra/HoraExtraScreen.kt`, agrega:
+En `ui/view/HoraExtraScreen.kt`, agrega:
 
 ```kotlin
 var observacion by rememberSaveable { mutableStateOf("") }
@@ -438,7 +438,7 @@ OutlinedTextField(
 ```
 
 **Sé honesto:** esto solo agrega el campo visual. Para **persistirlo** habría que tocar:
-`Entities.kt` → `Daos.kt` (migración) → `AttendanceRepository.kt` → `SolicitarHoraExtraUseCase.kt` → `HoraExtraViewModel.kt` → CSV/PDF → tests.
+`modelo/Entidades.kt` → `viewmodel/AppDatabase.kt` (migración) → `AttendanceRepository.kt` → `SolicitarHoraExtraUseCase.kt` → `HoraExtraViewModel.kt` → CSV/PDF → tests.
 
 **Qué decir:**
 > “Agregar el campo visual es rápido; persistirlo es un cambio de arquitectura porque atraviesa entidad, migración, repositorio y caso de uso.”

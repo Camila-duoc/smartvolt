@@ -285,17 +285,19 @@ smartvolt/
 
 | Archivo | Función |
 |---|---|
-| `data/local/Entities.kt` | Las 10 entidades Room: usuarios, faenas, frentes, beacons, marcas, lecturas BLE, eventos antifraude, visaciones, horas extra y ubicación compartida. Define claves, índices y claves foráneas. |
-| `data/local/Daos.kt` | DAOs de configuración, marcas y horas extra. Incluye las consultas, las migraciones 1→2, 2→3 y 3→4, y el singleton `AppDatabase`. |
-| `data/remote/Api.kt` | DTOs `@Serializable` y la interfaz Retrofit `ApiService` (envío de lotes y configuración). También define el formato de `seed.json`. |
+| `modelo/Entidades.kt` | Las 10 entidades Room: usuarios, faenas, frentes, beacons, marcas, lecturas BLE, eventos antifraude, visaciones, horas extra y ubicación compartida. Define claves, índices y claves foráneas. |
+| `modelo/Daos.kt` | DAOs de configuración, marcas y horas extra, con todas las consultas a Room. |
+| `modelo/Dtos.kt` | DTOs `@Serializable` de la API y del archivo `seed.json`. |
+| `data/remote/Api.kt` | Interfaz Retrofit `ApiService` (envío de lotes y configuración). |
 | `data/remote/FakeApi.kt` | Implementación simulada de `ApiService` para `demo`: acepta todas las marcas y devuelve configuración vacía. |
 | `data/repository/AttendanceRepository.kt` | Contrato de acceso a datos + `RoomAttendanceRepository`. Implementa lectura local, guardado transaccional, visación, sincronización, carga de la semilla y horas extra. |
+| `viewmodel/AppDatabase.kt` | Base de datos Room, singleton `AppDatabase` y migraciones 1→2, 2→3 y 3→4. |
 
 ### 6.5 Dominio
 
 | Archivo | Función |
 |---|---|
-| `domain/model/Models.kt` | Enums (`Rol`, `TipoMarca`, `EstadoMarca`, `SyncEstado`, `Severidad`, `TipoPerimetro`, `EstadoHoraExtra`) y data classes del dominio (`LatLon`, `Perimetro`, `Evidencia`, `Veredicto`, etc.). |
+| `modelo/Modelos.kt` | Enums (`Rol`, `TipoMarca`, `EstadoMarca`, `SyncEstado`, `Severidad`, `TipoPerimetro`, `EstadoHoraExtra`) y data classes del dominio (`LatLon`, `Perimetro`, `Evidencia`, `Veredicto`, etc.). |
 | `domain/antifraude/RuleEngine.kt` | Ejecuta todas las reglas y decide el estado final: RECHAZADA si falla una bloqueante, SOSPECHOSA si falla una advertencia, VÁLIDA si todo pasa. |
 | `domain/antifraude/Rules.kt` | Implementa las 7 reglas antifraude (`MockLocationRule`, `SequenceRule`, `GeofenceRule`, `BeaconRule`, `PresenciaFisicaRule`, `DeveloperModeRule`, `ClockRule`). |
 | `domain/geo/GeoUtils.kt` | Geofencing en Kotlin puro: distancia Haversine, punto dentro de círculo/polígono y distancia al borde con margen. |
@@ -322,23 +324,27 @@ smartvolt/
 |---|---|
 | `ui/navigation/AppNav.kt` | `NavHost` con todas las rutas, transiciones animadas, `popUpTo` al cerrar sesión y `LocalNavController` para navegar desde cualquier pantalla. |
 | `ui/theme/Theme.kt` | Tema Material 3: esquemas claro/oscuro, tipografía, formas y colores de marca (`Ok`, `Warn`, `Bad`). |
-| `ui/login/LoginScreen.kt` | Pantalla de login. Contiene `SessionState` (sesión compartida), `LoginViewModel` y el formulario con validación por campo e íconos. |
-| `ui/checkin/CheckInScreen.kt` | Pantalla del operario: permisos, botones grandes de entrada/salida, resultado animado, notificación de marca sospechosa y accesos a historial/mapa/horas extra. Incluye `CheckInViewModel`. |
-| `ui/foreman/ForemanScreen.kt` | Panel del capataz: última marca por operario, visación de sospechosas y accesos a horas extra, calendario y mapa. Incluye `ForemanViewModel`. |
-| `ui/horasextra/HoraExtraScreen.kt` | Formulario de solicitud de horas extra con validación por campo, íconos, tope de horas y motivo mínimo. |
-| `ui/horasextra/HoraExtraViewModel.kt` | Estado de las solicitudes y acciones de solicitar/aprobar/rechazar según el rol. |
-| `ui/horasextra/AprobarHoraExtraScreen.kt` | Pantalla del capataz para revisar solicitudes pendientes y ver el historial de resoluciones. |
-| `ui/horasextra/MisHorasExtraScreen.kt` | Pantalla del operario con sus solicitudes y botón flotante para crear una nueva. |
-| `ui/horasextra/MisHorasExtraViewModel.kt` | Carga las solicitudes del usuario activo desde Room. |
-| `ui/horasextra/ResumenHorasExtraScreen.kt` | Contenido reutilizable de resumen: tarjetas por estado y lista de solicitudes. |
-| `ui/calendario/CalendarioScreen.kt` | Historial agrupado por fecha, con filtros de 7 días, 30 días o todo. |
-| `ui/calendario/CalendarioViewModel.kt` | Carga y agrupa las marcas por día según el rol (operario, capataz o admin). |
-| `ui/mapa/MapaScreen.kt` | Muestra el mapa con **Mapbox Maps SDK + maps-compose**. Si el rol es ADMIN, permite tocar el mapa y guardar la ubicación para todos; los demás roles solo la consultan. |
-| `ui/mapa/MapaViewModel.kt` | Carga la ubicación compartida o, si no existe, el centro y radio de la faena. Autoriza el cambio únicamente a ADMIN. |
-| `ui/visacion/DetalleVisacionScreen.kt` | Detalle de solo lectura de una marca y su visación. |
-| `ui/visacion/DetalleVisacionViewModel.kt` | Carga la marca y la visación asociada desde el repositorio. |
-| `ui/admin/AdminScreen.kt` | Panel de administración: métricas animadas, exportación CSV/PDF, porcentaje de marcas no válidas, alertas con navegación a detalle y estado de la cadena de hashes. |
-| `ui/admin/AdminViewModel.kt` | Calcula métricas, porcentajes, alertas, verificación de la cadena y líneas del reporte PDF/CSV. |
+| `ui/compoments/ResumenCard.kt` | Tarjeta compacta reutilizable para los resúmenes de horas extra. |
+| `ui/view/LoginScreen.kt` | Pantalla de login con formulario, validación por campo e íconos. El estado y la sesión están en `viewmodel/LoginViewModel.kt`. |
+| `viewmodel/LoginViewModel.kt` | `SessionState` (sesión compartida), `LoginUi` y la lógica de autenticación. |
+| `ui/view/CheckInScreen.kt` | Pantalla del operario: permisos, botones grandes de entrada/salida, resultado animado y accesos a historial/mapa/horas extra. |
+| `viewmodel/CheckInViewModel.kt` | Estado de la marca, veredicto, notificación de marca sospechosa y sincronización. |
+| `ui/view/ForemanScreen.kt` | Panel del capataz: última marca por operario, visación de sospechosas y accesos a horas extra, calendario y mapa. |
+| `viewmodel/ForemanViewModel.kt` | Carga la presencia por faena y ejecuta la visación de marcas. |
+| `ui/view/HoraExtraScreen.kt` | Formulario de solicitud de horas extra con validación por campo, íconos, tope de horas y motivo mínimo. |
+| `viewmodel/HoraExtraViewModel.kt` | Estado de las solicitudes y acciones de solicitar/aprobar/rechazar según el rol. |
+| `ui/view/AprobarHoraExtraScreen.kt` | Pantalla del capataz para revisar solicitudes pendientes y ver el historial de resoluciones. |
+| `ui/view/MisHorasExtraScreen.kt` | Pantalla del operario con sus solicitudes y botón flotante para crear una nueva. |
+| `viewmodel/MisHorasExtraViewModel.kt` | Carga las solicitudes del usuario activo desde Room. |
+| `ui/view/ResumenHorasExtraScreen.kt` | Contenido reutilizable de resumen: tarjetas por estado y lista de solicitudes. |
+| `ui/view/CalendarioScreen.kt` | Historial agrupado por fecha, con filtros de 7 días, 30 días o todo. |
+| `viewmodel/CalendarioViewModel.kt` | Carga y agrupa las marcas por día según el rol (operario, capataz o admin). |
+| `ui/view/MapaScreen.kt` | Muestra el mapa con **Mapbox Maps SDK + maps-compose**. Si el rol es ADMIN, permite tocar el mapa y guardar la ubicación para todos; los demás roles solo la consultan. |
+| `viewmodel/MapaViewModel.kt` | Carga la ubicación compartida o, si no existe, el centro y radio de la faena. Autoriza el cambio únicamente a ADMIN. |
+| `ui/view/DetalleVisacionScreen.kt` | Detalle de solo lectura de una marca y su visación. |
+| `viewmodel/DetalleVisacionViewModel.kt` | Carga la marca y la visación asociada desde el repositorio. |
+| `ui/view/AdminScreen.kt` | Panel de administración: métricas animadas, exportación CSV/PDF, porcentaje de marcas no válidas, alertas con navegación a detalle y estado de la cadena de hashes. |
+| `viewmodel/AdminViewModel.kt` | Calcula métricas, porcentajes, alertas, verificación de la cadena y líneas del reporte PDF/CSV. |
 
 ### 6.8 Pruebas unitarias
 
@@ -366,11 +372,11 @@ smartvolt/
 | Ítem de la pauta | Dónde se demuestra |
 |---|---|
 | Diseño Material 3 / navegación clara | `ui/theme/Theme.kt`, `res/values/themes.xml`, `res/values-night/themes.xml`, `ui/navigation/AppNav.kt` y todas las pantallas con `Scaffold`, `TopAppBar`, `Card`, `FilterChip`. |
-| Formularios validados con íconos y mensajes | `ui/login/LoginScreen.kt`, `ui/horasextra/HoraExtraScreen.kt`, `domain/usecase/ValidarLoginUseCase.kt`, `domain/usecase/SolicitarHoraExtraUseCase.kt`. |
+| Formularios validados con íconos y mensajes | `ui/view/LoginScreen.kt`, `ui/view/HoraExtraScreen.kt`, `domain/usecase/ValidarLoginUseCase.kt`, `domain/usecase/SolicitarHoraExtraUseCase.kt`. |
 | Validaciones desde lógica (sin acoplar a la UI) | `ValidarLoginUseCase`, `SolicitarHoraExtraUseCase`, `RuleEngine`, `GeoUtils`, `HashMarca`. |
-| Navegación funcional / estructura modular | `ui/navigation/AppNav.kt`, paquetes `data/domain/ui/di/sensors/sync/notifications`, MVVM con Hilt. |
+| Navegación funcional / estructura modular | `ui/navigation/AppNav.kt`, paquetes `modelo/viewmodel/ui/domain/data/di/sensors/sync/notifications`, MVVM con Hilt. |
 | Gestión de estado | `StateFlow` + `collectAsState` en todos los ViewModels; `SessionState` compartido. |
-| Almacenamiento local operativo | `data/local/Entities.kt`, `Daos.kt`, `AttendanceRepository.kt`, `assets/seed.json`. |
+| Almacenamiento local operativo | `modelo/Entidades.kt`, `modelo/Daos.kt`, `viewmodel/AppDatabase.kt`, `AttendanceRepository.kt`, `assets/seed.json`. |
 | Recursos nativos (≥ 2) | GPS y BLE reales en `sensors/RealSensors.kt`; permisos en `CheckInScreen`; `FileProvider` en `AdminScreen`; SDK de mapas Mapbox en `MapaScreen`; notificaciones en `Notificaciones.kt`. |
 | Animaciones | `AppNav.kt`, `CheckInScreen.kt`, `AdminScreen.kt`, `HoraExtraScreen.kt`, `LoginScreen.kt`. |
 

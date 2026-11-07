@@ -1,8 +1,8 @@
 package cl.smartvolt.asistencia
 
-import cl.smartvolt.asistencia.data.local.HoraExtraEntity
+import cl.smartvolt.asistencia.modelo.HoraExtraEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
-import cl.smartvolt.asistencia.domain.model.EstadoHoraExtra
+import cl.smartvolt.asistencia.modelo.EstadoHoraExtra
 import cl.smartvolt.asistencia.domain.usecase.SolicitarHoraExtraUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

@@ -1,6 +1,6 @@
 package cl.smartvolt.asistencia.sensors
 
-import cl.smartvolt.asistencia.domain.model.*
+import cl.smartvolt.asistencia.modelo.*
 import kotlinx.coroutines.delay
 
 class FakeLocationProvider : LocationProvider {

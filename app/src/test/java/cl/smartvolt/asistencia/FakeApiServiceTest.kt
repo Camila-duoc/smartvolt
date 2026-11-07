@@ -1,8 +1,8 @@
 package cl.smartvolt.asistencia
 
 import cl.smartvolt.asistencia.data.remote.FakeApiService
-import cl.smartvolt.asistencia.data.remote.LoteRequest
-import cl.smartvolt.asistencia.data.remote.MarcaDto
+import cl.smartvolt.asistencia.modelo.LoteRequest
+import cl.smartvolt.asistencia.modelo.MarcaDto
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

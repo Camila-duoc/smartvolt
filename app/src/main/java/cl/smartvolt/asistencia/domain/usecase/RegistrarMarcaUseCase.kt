@@ -1,10 +1,10 @@
 package cl.smartvolt.asistencia.domain.usecase
 
 import android.os.SystemClock
-import cl.smartvolt.asistencia.data.local.MarcaEntity
+import cl.smartvolt.asistencia.modelo.MarcaEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.domain.antifraude.RuleEngine
-import cl.smartvolt.asistencia.domain.model.*
+import cl.smartvolt.asistencia.modelo.*
 import cl.smartvolt.asistencia.domain.usecase.HashMarca
 import cl.smartvolt.asistencia.sensors.BleScanner
 import cl.smartvolt.asistencia.sensors.LocationProvider

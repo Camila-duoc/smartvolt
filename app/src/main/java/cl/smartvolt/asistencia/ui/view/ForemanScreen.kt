@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.foreman
+package cl.smartvolt.asistencia.ui.view
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,43 +15,9 @@ import cl.smartvolt.asistencia.ui.navigation.LocalNavController
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import cl.smartvolt.asistencia.data.local.MarcaEntity
-import cl.smartvolt.asistencia.data.repository.AttendanceRepository
-import cl.smartvolt.asistencia.domain.model.EstadoMarca
-import cl.smartvolt.asistencia.ui.login.SessionState
+import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.ui.theme.*
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import javax.inject.Inject
-
-data class FilaPresencia(val marca: MarcaEntity, val visada: Boolean?)
-
-@HiltViewModel
-class ForemanViewModel @Inject constructor(
-    private val repo: AttendanceRepository,
-    private val session: SessionState,
-) : ViewModel() {
-    val supervisorId get() = session.usuario.value?.id.orEmpty()
-
-    /** Última marca de cada operario de la faena + su visación (si existe). Se alimenta de Room. */
-    val filas: StateFlow<List<FilaPresencia>> = flow { emit(session.usuario.value?.faenaId) }
-        .filterNotNull()
-        .flatMapLatest { faena -> combine(repo.marcasDeFaena(faena), repo.visaciones()) { marcas, vis ->
-            val visPorMarca = vis.associate { it.marcaId to it.aprobada }
-            marcas.groupBy { it.usuarioId }.map { (_, l) -> l.first().let { FilaPresencia(it, visPorMarca[it.id]) } }
-                .sortedBy { it.marca.usuarioId }
-        } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    fun visar(marcaId: String, aprobada: Boolean) = viewModelScope.launch {
-        repo.visar(marcaId, supervisorId, aprobada, System.currentTimeMillis())
-    }
-
-    fun cerrarSesion() = session.cerrarSesion()
-}
+import cl.smartvolt.asistencia.viewmodel.ForemanViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
