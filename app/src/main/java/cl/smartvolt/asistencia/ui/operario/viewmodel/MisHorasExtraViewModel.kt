@@ -1,9 +1,10 @@
-package cl.smartvolt.asistencia.viewmodel
+package cl.smartvolt.asistencia.ui.operario.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
+import cl.smartvolt.asistencia.ui.operario.model.MisHorasExtraUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,9 +35,3 @@ class MisHorasExtraViewModel @Inject constructor(
         }
     }
 }
-
-data class MisHorasExtraUi(
-    val horasExtra: List<cl.smartvolt.asistencia.modelo.HoraExtraEntity> = emptyList(),
-    val cargando: Boolean = false,
-    val error: String? = null
-)

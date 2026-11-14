@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.view
+package cl.smartvolt.asistencia.ui.operario.view
 
 import android.Manifest
 import android.content.Context
@@ -34,7 +34,7 @@ import cl.smartvolt.asistencia.modelo.*
 import cl.smartvolt.asistencia.sensors.DemoState
 import cl.smartvolt.asistencia.sensors.Escenario
 import cl.smartvolt.asistencia.ui.comun.theme.*
-import cl.smartvolt.asistencia.viewmodel.CheckInViewModel
+import cl.smartvolt.asistencia.ui.operario.viewmodel.CheckInViewModel
 
 private fun permisosCriticos(): Array<String> = buildList {
     add(Manifest.permission.ACCESS_FINE_LOCATION)

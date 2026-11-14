@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.view
+package cl.smartvolt.asistencia.ui.operario.view
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically

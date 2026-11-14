@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.viewmodel
+package cl.smartvolt.asistencia.ui.operario.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -7,10 +7,10 @@ import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.domain.usecase.RegistrarMarcaUseCase
 import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.modelo.TipoMarca
-import cl.smartvolt.asistencia.modelo.Veredicto
 import cl.smartvolt.asistencia.notifications.Notificaciones
 import cl.smartvolt.asistencia.sync.SyncScheduler
 import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
+import cl.smartvolt.asistencia.ui.operario.model.CheckInUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,8 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-data class CheckInUi(val cargando: Boolean = false, val veredicto: Veredicto? = null, val error: String? = null)
 
 @HiltViewModel
 class CheckInViewModel @Inject constructor(

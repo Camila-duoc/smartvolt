@@ -16,11 +16,11 @@ import androidx.navigation.navArgument
 import cl.smartvolt.asistencia.modelo.Rol
 import cl.smartvolt.asistencia.ui.view.AdminScreen
 import cl.smartvolt.asistencia.ui.comun.calendario.view.CalendarioScreen
-import cl.smartvolt.asistencia.ui.view.CheckInScreen
+import cl.smartvolt.asistencia.ui.operario.view.CheckInScreen
 import cl.smartvolt.asistencia.ui.view.ForemanScreen
 import cl.smartvolt.asistencia.ui.view.AprobarHoraExtraScreen
-import cl.smartvolt.asistencia.ui.view.HoraExtraScreen
-import cl.smartvolt.asistencia.ui.view.MisHorasExtraScreen
+import cl.smartvolt.asistencia.ui.operario.view.HoraExtraScreen
+import cl.smartvolt.asistencia.ui.operario.view.MisHorasExtraScreen
 import cl.smartvolt.asistencia.ui.comun.login.view.LoginScreen
 import cl.smartvolt.asistencia.ui.comun.mapa.view.MapaScreen
 import cl.smartvolt.asistencia.ui.comun.detalle.view.DetalleVisacionScreen
