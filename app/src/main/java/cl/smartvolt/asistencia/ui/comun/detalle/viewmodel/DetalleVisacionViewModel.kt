@@ -1,24 +1,14 @@
-package cl.smartvolt.asistencia.viewmodel
+package cl.smartvolt.asistencia.ui.comun.detalle.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cl.smartvolt.asistencia.modelo.MarcaEntity
-import cl.smartvolt.asistencia.modelo.VisacionEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
+import cl.smartvolt.asistencia.ui.comun.detalle.model.DetalleVisacionUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-/** UI del detalle de una marca y su visación. */
-data class DetalleVisacionUi(
-    val marca: MarcaEntity? = null,
-    val visada: Boolean? = null,
-    val visacionTimestamp: Long? = null,
-    val cargando: Boolean = false,
-    val error: String? = null
-)
 
 @HiltViewModel
 class DetalleVisacionViewModel @Inject constructor(

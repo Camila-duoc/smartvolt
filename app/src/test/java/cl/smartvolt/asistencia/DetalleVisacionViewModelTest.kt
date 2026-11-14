@@ -6,7 +6,7 @@ import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.modelo.SyncEstado
 import cl.smartvolt.asistencia.modelo.TipoMarca
-import cl.smartvolt.asistencia.viewmodel.DetalleVisacionViewModel
+import cl.smartvolt.asistencia.ui.comun.detalle.viewmodel.DetalleVisacionViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle

@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.view
+package cl.smartvolt.asistencia.ui.comun.detalle.view
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,7 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.ui.comun.theme.*
-import cl.smartvolt.asistencia.viewmodel.DetalleVisacionViewModel
+import cl.smartvolt.asistencia.ui.comun.detalle.viewmodel.DetalleVisacionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
