@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.viewmodel
+package cl.smartvolt.asistencia.modelo
 
 import android.content.Context
 import androidx.room.Database
@@ -6,19 +6,6 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import cl.smartvolt.asistencia.modelo.BeaconEntity
-import cl.smartvolt.asistencia.modelo.ConfigDao
-import cl.smartvolt.asistencia.modelo.EventoAntifraudeEntity
-import cl.smartvolt.asistencia.modelo.FaenaEntity
-import cl.smartvolt.asistencia.modelo.FrenteEntity
-import cl.smartvolt.asistencia.modelo.HoraExtraDao
-import cl.smartvolt.asistencia.modelo.HoraExtraEntity
-import cl.smartvolt.asistencia.modelo.LecturaBleEntity
-import cl.smartvolt.asistencia.modelo.MarcaDao
-import cl.smartvolt.asistencia.modelo.MarcaEntity
-import cl.smartvolt.asistencia.modelo.UbicacionCompartidaEntity
-import cl.smartvolt.asistencia.modelo.UsuarioEntity
-import cl.smartvolt.asistencia.modelo.VisacionEntity
 
 /** Migración de la versión 1 a la 2: crea la tabla horas_extra. */
 val MIGRACION_1_2: Migration = object : Migration(1, 2) {

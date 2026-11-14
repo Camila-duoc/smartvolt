@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.withTransaction
 import cl.smartvolt.asistencia.data.remote.*
 import cl.smartvolt.asistencia.modelo.*
-import cl.smartvolt.asistencia.viewmodel.AppDatabase
+import cl.smartvolt.asistencia.modelo.AppDatabase
 import java.util.UUID
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
