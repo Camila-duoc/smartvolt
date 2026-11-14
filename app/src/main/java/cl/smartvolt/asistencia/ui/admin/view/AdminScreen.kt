@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.view
+package cl.smartvolt.asistencia.ui.admin.view
 
 import android.content.Context
 import android.content.Intent
@@ -33,8 +33,8 @@ import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.domain.usecase.ExportarReportePdf
 import cl.smartvolt.asistencia.ui.comun.navigation.LocalNavController
 import cl.smartvolt.asistencia.ui.comun.theme.*
-import cl.smartvolt.asistencia.viewmodel.AdminViewModel
-import cl.smartvolt.asistencia.viewmodel.AlertaResumen
+import cl.smartvolt.asistencia.ui.admin.viewmodel.AdminViewModel
+import cl.smartvolt.asistencia.ui.admin.model.AlertaResumen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

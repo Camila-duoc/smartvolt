@@ -14,7 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cl.smartvolt.asistencia.modelo.Rol
-import cl.smartvolt.asistencia.ui.view.AdminScreen
+import cl.smartvolt.asistencia.ui.admin.view.AdminScreen
 import cl.smartvolt.asistencia.ui.comun.calendario.view.CalendarioScreen
 import cl.smartvolt.asistencia.ui.operario.view.CheckInScreen
 import cl.smartvolt.asistencia.ui.capataz.view.ForemanScreen
