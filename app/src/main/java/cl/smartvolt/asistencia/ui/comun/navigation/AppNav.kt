@@ -17,8 +17,8 @@ import cl.smartvolt.asistencia.modelo.Rol
 import cl.smartvolt.asistencia.ui.view.AdminScreen
 import cl.smartvolt.asistencia.ui.comun.calendario.view.CalendarioScreen
 import cl.smartvolt.asistencia.ui.operario.view.CheckInScreen
-import cl.smartvolt.asistencia.ui.view.ForemanScreen
-import cl.smartvolt.asistencia.ui.view.AprobarHoraExtraScreen
+import cl.smartvolt.asistencia.ui.capataz.view.ForemanScreen
+import cl.smartvolt.asistencia.ui.capataz.view.AprobarHoraExtraScreen
 import cl.smartvolt.asistencia.ui.operario.view.HoraExtraScreen
 import cl.smartvolt.asistencia.ui.operario.view.MisHorasExtraScreen
 import cl.smartvolt.asistencia.ui.comun.login.view.LoginScreen

@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.view
+package cl.smartvolt.asistencia.ui.capataz.view
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.ui.comun.theme.*
-import cl.smartvolt.asistencia.viewmodel.ForemanViewModel
+import cl.smartvolt.asistencia.ui.capataz.viewmodel.ForemanViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

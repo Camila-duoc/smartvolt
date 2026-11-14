@@ -1,9 +1,9 @@
-package cl.smartvolt.asistencia.viewmodel
+package cl.smartvolt.asistencia.ui.capataz.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
-import cl.smartvolt.asistencia.modelo.MarcaEntity
+import cl.smartvolt.asistencia.ui.capataz.model.FilaPresencia
 import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,8 +16,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-data class FilaPresencia(val marca: MarcaEntity, val visada: Boolean?)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
