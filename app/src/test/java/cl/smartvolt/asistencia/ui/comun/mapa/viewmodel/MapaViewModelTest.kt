@@ -1,5 +1,6 @@
-package cl.smartvolt.asistencia
+package cl.smartvolt.asistencia.ui.comun.mapa.viewmodel
 
+import cl.smartvolt.asistencia.MainDispatcherRule
 import cl.smartvolt.asistencia.modelo.FaenaEntity
 import cl.smartvolt.asistencia.modelo.UsuarioEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
