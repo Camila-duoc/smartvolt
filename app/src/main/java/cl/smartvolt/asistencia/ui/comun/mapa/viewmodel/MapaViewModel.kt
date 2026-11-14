@@ -1,35 +1,16 @@
-package cl.smartvolt.asistencia.viewmodel
+package cl.smartvolt.asistencia.ui.comun.mapa.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.modelo.Rol
+import cl.smartvolt.asistencia.ui.comun.mapa.model.MapaUi
 import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-/** Datos necesarios para dibujar el mapa y, si corresponde, elegir su ubicación. */
-data class MapaUi(
-    val lat: Double? = null,
-    val lon: Double? = null,
-    /** Centro original de la faena; se usa si administración todavía no elige un punto. */
-    val latFaena: Double? = null,
-    val lonFaena: Double? = null,
-    val radioM: Double = 100.0,
-    val nombreFaena: String = "",
-    val esAdmin: Boolean = false,
-    /** true cuando el punto mostrado fue guardado por administración. */
-    val ubicacionCompartida: Boolean = false,
-    /** true cuando administración movió el marcador pero aún no guardó. */
-    val seleccionPendiente: Boolean = false,
-    val guardando: Boolean = false,
-    val guardado: Boolean = false,
-    val cargando: Boolean = true,
-    val error: String? = null,
-)
 
 @HiltViewModel
 class MapaViewModel @Inject constructor(

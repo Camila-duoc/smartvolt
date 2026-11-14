@@ -22,7 +22,7 @@ import cl.smartvolt.asistencia.ui.view.AprobarHoraExtraScreen
 import cl.smartvolt.asistencia.ui.view.HoraExtraScreen
 import cl.smartvolt.asistencia.ui.view.MisHorasExtraScreen
 import cl.smartvolt.asistencia.ui.comun.login.view.LoginScreen
-import cl.smartvolt.asistencia.ui.view.MapaScreen
+import cl.smartvolt.asistencia.ui.comun.mapa.view.MapaScreen
 import cl.smartvolt.asistencia.ui.view.DetalleVisacionScreen
 
 /** NavController ambiente para que las pantallas puedan navegar sin recibirlo por parámetro. */

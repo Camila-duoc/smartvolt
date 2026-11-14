@@ -9,7 +9,7 @@ import cl.smartvolt.asistencia.modelo.Rol
 import cl.smartvolt.asistencia.modelo.TipoPerimetro
 import cl.smartvolt.asistencia.modelo.UbicacionCompartida
 import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
-import cl.smartvolt.asistencia.viewmodel.MapaViewModel
+import cl.smartvolt.asistencia.ui.comun.mapa.viewmodel.MapaViewModel
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
