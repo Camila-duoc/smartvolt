@@ -1,10 +1,10 @@
-package cl.smartvolt.asistencia.viewmodel
+package cl.smartvolt.asistencia.ui.comun.calendario.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cl.smartvolt.asistencia.modelo.MarcaEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.modelo.Rol
+import cl.smartvolt.asistencia.ui.comun.calendario.model.CalendarioUi
 import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import javax.inject.Inject
@@ -84,13 +83,3 @@ class CalendarioViewModel @Inject constructor(
         }
     }
 }
-
-data class CalendarioUi(
-    /** Marcas agrupadas por día local. Solo contiene días con al menos una marca. */
-    val marcasPorDia: Map<LocalDate, List<MarcaEntity>> = emptyMap(),
-    val rol: Rol? = null,
-    val desde: Long = 0L,
-    val hasta: Long = Long.MAX_VALUE,
-    val cargando: Boolean = false,
-    val error: String? = null,
-)

@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.view
+package cl.smartvolt.asistencia.ui.comun.calendario.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,7 +36,7 @@ import cl.smartvolt.asistencia.modelo.Rol
 import cl.smartvolt.asistencia.ui.comun.theme.Bad
 import cl.smartvolt.asistencia.ui.comun.theme.Ok
 import cl.smartvolt.asistencia.ui.comun.theme.Warn
-import cl.smartvolt.asistencia.viewmodel.CalendarioViewModel
+import cl.smartvolt.asistencia.ui.comun.calendario.viewmodel.CalendarioViewModel
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.YearMonth
