@@ -7,7 +7,7 @@ import cl.smartvolt.asistencia.modelo.EstadoHoraExtra
 import cl.smartvolt.asistencia.modelo.Rol
 import cl.smartvolt.asistencia.domain.usecase.ResolverHoraExtraUseCase
 import cl.smartvolt.asistencia.domain.usecase.SolicitarHoraExtraUseCase
-import cl.smartvolt.asistencia.viewmodel.HoraExtraViewModel
+import cl.smartvolt.asistencia.ui.comun.horasextra.viewmodel.HoraExtraViewModel
 import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest

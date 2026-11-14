@@ -1,26 +1,18 @@
-package cl.smartvolt.asistencia.viewmodel
+package cl.smartvolt.asistencia.ui.comun.horasextra.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cl.smartvolt.asistencia.modelo.HoraExtraEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
-import cl.smartvolt.asistencia.modelo.Rol
 import cl.smartvolt.asistencia.domain.usecase.ResolverHoraExtraUseCase
 import cl.smartvolt.asistencia.domain.usecase.SolicitarHoraExtraUseCase
+import cl.smartvolt.asistencia.modelo.Rol
+import cl.smartvolt.asistencia.ui.comun.horasextra.model.HoraExtraUi
 import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-data class HoraExtraUi(
-    val solicitudes: List<HoraExtraEntity> = emptyList(),
-    val esSupervisor: Boolean = false,
-    val cargando: Boolean = false,
-    val error: String? = null,
-    val exito: Boolean = false,
-)
 
 @HiltViewModel
 class HoraExtraViewModel @Inject constructor(

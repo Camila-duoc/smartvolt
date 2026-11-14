@@ -16,7 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import cl.smartvolt.asistencia.modelo.EstadoHoraExtra
 import cl.smartvolt.asistencia.ui.comun.compoments.ResumenCard
 import cl.smartvolt.asistencia.ui.comun.theme.*
-import cl.smartvolt.asistencia.viewmodel.HoraExtraViewModel
+import cl.smartvolt.asistencia.ui.comun.horasextra.viewmodel.HoraExtraViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
