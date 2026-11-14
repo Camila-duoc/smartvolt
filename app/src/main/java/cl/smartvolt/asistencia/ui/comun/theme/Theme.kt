@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.theme
+package cl.smartvolt.asistencia.ui.comun.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape

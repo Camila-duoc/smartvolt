@@ -31,8 +31,8 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.domain.usecase.ExportarReportePdf
-import cl.smartvolt.asistencia.ui.navigation.LocalNavController
-import cl.smartvolt.asistencia.ui.theme.*
+import cl.smartvolt.asistencia.ui.comun.navigation.LocalNavController
+import cl.smartvolt.asistencia.ui.comun.theme.*
 import cl.smartvolt.asistencia.viewmodel.AdminViewModel
 import cl.smartvolt.asistencia.viewmodel.AlertaResumen
 import kotlinx.coroutines.Dispatchers

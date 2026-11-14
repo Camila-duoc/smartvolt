@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.compoments
+package cl.smartvolt.asistencia.ui.comun.compoments
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope

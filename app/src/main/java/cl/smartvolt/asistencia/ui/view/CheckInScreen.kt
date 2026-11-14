@@ -26,14 +26,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import cl.smartvolt.asistencia.ui.navigation.LocalNavController
+import cl.smartvolt.asistencia.ui.comun.navigation.LocalNavController
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.smartvolt.asistencia.BuildConfig
 import cl.smartvolt.asistencia.modelo.*
 import cl.smartvolt.asistencia.sensors.DemoState
 import cl.smartvolt.asistencia.sensors.Escenario
-import cl.smartvolt.asistencia.ui.theme.*
+import cl.smartvolt.asistencia.ui.comun.theme.*
 import cl.smartvolt.asistencia.viewmodel.CheckInViewModel
 
 private fun permisosCriticos(): Array<String> = buildList {

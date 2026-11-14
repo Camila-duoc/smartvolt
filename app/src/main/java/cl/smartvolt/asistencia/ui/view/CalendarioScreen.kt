@@ -33,9 +33,9 @@ import cl.smartvolt.asistencia.domain.calendario.CalendarioUtils
 import cl.smartvolt.asistencia.domain.calendario.EstadoDia
 import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.modelo.Rol
-import cl.smartvolt.asistencia.ui.theme.Bad
-import cl.smartvolt.asistencia.ui.theme.Ok
-import cl.smartvolt.asistencia.ui.theme.Warn
+import cl.smartvolt.asistencia.ui.comun.theme.Bad
+import cl.smartvolt.asistencia.ui.comun.theme.Ok
+import cl.smartvolt.asistencia.ui.comun.theme.Warn
 import cl.smartvolt.asistencia.viewmodel.CalendarioViewModel
 import java.text.SimpleDateFormat
 import java.time.LocalDate

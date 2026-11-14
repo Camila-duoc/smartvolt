@@ -9,8 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cl.smartvolt.asistencia.modelo.EstadoHoraExtra
 import cl.smartvolt.asistencia.modelo.HoraExtraEntity
-import cl.smartvolt.asistencia.ui.compoments.ResumenCard
-import cl.smartvolt.asistencia.ui.theme.*
+import cl.smartvolt.asistencia.ui.comun.compoments.ResumenCard
+import cl.smartvolt.asistencia.ui.comun.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 

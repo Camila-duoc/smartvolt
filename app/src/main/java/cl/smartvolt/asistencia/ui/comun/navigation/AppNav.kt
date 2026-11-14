@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.navigation
+package cl.smartvolt.asistencia.ui.comun.navigation
 
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn

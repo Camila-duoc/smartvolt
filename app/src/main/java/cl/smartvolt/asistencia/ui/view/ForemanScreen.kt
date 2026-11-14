@@ -11,12 +11,12 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import cl.smartvolt.asistencia.ui.navigation.LocalNavController
+import cl.smartvolt.asistencia.ui.comun.navigation.LocalNavController
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.smartvolt.asistencia.modelo.EstadoMarca
-import cl.smartvolt.asistencia.ui.theme.*
+import cl.smartvolt.asistencia.ui.comun.theme.*
 import cl.smartvolt.asistencia.viewmodel.ForemanViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
