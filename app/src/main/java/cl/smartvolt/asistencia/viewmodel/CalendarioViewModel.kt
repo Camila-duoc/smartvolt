@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import cl.smartvolt.asistencia.modelo.MarcaEntity
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.modelo.Rol
-import cl.smartvolt.asistencia.viewmodel.SessionState
+import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

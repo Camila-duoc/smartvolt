@@ -10,6 +10,7 @@ import cl.smartvolt.asistencia.modelo.TipoMarca
 import cl.smartvolt.asistencia.modelo.Veredicto
 import cl.smartvolt.asistencia.notifications.Notificaciones
 import cl.smartvolt.asistencia.sync.SyncScheduler
+import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow

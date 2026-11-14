@@ -1,35 +1,17 @@
-package cl.smartvolt.asistencia.viewmodel
+package cl.smartvolt.asistencia.ui.comun.login.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
 import cl.smartvolt.asistencia.domain.usecase.ValidarLoginUseCase
 import cl.smartvolt.asistencia.modelo.Rol
-import cl.smartvolt.asistencia.modelo.UsuarioEntity
+import cl.smartvolt.asistencia.ui.comun.login.model.LoginUi
+import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class SessionState @Inject constructor() {
-    val usuario = MutableStateFlow<UsuarioEntity?>(null)
-
-    fun cerrarSesion() {
-        usuario.value = null
-    }
-}
-
-/** Estado del formulario de login: errores por campo y error general de autenticación. */
-data class LoginUi(
-    val idError: String? = null,
-    val pinError: String? = null,
-    val errorGeneral: String? = null,
-) {
-    val formularioValido: Boolean get() = idError == null && pinError == null
-}
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(

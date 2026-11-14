@@ -8,7 +8,7 @@ import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.domain.usecase.ExportarMarcasCsv
 import cl.smartvolt.asistencia.domain.usecase.HashMarca
 import cl.smartvolt.asistencia.domain.usecase.MarcaHash
-import cl.smartvolt.asistencia.viewmodel.SessionState
+import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

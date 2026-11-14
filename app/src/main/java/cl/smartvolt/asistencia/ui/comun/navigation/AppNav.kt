@@ -21,7 +21,7 @@ import cl.smartvolt.asistencia.ui.view.ForemanScreen
 import cl.smartvolt.asistencia.ui.view.AprobarHoraExtraScreen
 import cl.smartvolt.asistencia.ui.view.HoraExtraScreen
 import cl.smartvolt.asistencia.ui.view.MisHorasExtraScreen
-import cl.smartvolt.asistencia.ui.view.LoginScreen
+import cl.smartvolt.asistencia.ui.comun.login.view.LoginScreen
 import cl.smartvolt.asistencia.ui.view.MapaScreen
 import cl.smartvolt.asistencia.ui.view.DetalleVisacionScreen
 

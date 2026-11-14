@@ -8,7 +8,7 @@ import cl.smartvolt.asistencia.modelo.EstadoMarca
 import cl.smartvolt.asistencia.modelo.SyncEstado
 import cl.smartvolt.asistencia.modelo.TipoMarca
 import cl.smartvolt.asistencia.viewmodel.AdminViewModel
-import cl.smartvolt.asistencia.viewmodel.SessionState
+import cl.smartvolt.asistencia.ui.comun.sesion.SessionState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle

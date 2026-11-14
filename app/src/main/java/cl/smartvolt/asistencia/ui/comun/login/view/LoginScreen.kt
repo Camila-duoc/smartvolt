@@ -1,4 +1,4 @@
-package cl.smartvolt.asistencia.ui.view
+package cl.smartvolt.asistencia.ui.comun.login.view
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cl.smartvolt.asistencia.domain.usecase.ValidarLoginUseCase
 import cl.smartvolt.asistencia.modelo.Rol
-import cl.smartvolt.asistencia.viewmodel.LoginViewModel
+import cl.smartvolt.asistencia.ui.comun.login.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(onLogin: (Rol) -> Unit, vm: LoginViewModel = hiltViewModel()) {
