@@ -3,7 +3,7 @@ package cl.smartvolt.asistencia.di
 import android.content.Context
 import androidx.room.Room
 import cl.smartvolt.asistencia.BuildConfig
-import cl.smartvolt.asistencia.viewmodel.AppDatabase
+import cl.smartvolt.asistencia.modelo.AppDatabase
 import cl.smartvolt.asistencia.data.remote.ApiService
 import cl.smartvolt.asistencia.data.remote.FakeApiService
 import cl.smartvolt.asistencia.data.repository.AttendanceRepository
